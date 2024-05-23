@@ -19,7 +19,7 @@ class RID(ABC):
     def from_string(cls, rid_str):
         # generates a table mapping the means symbol to the class
         if not cls.means_loaded:
-            import means
+            from rid_lib import means
 
             # generates list of all Means derived from RID
             means_classes = [
@@ -37,9 +37,13 @@ class RID(ABC):
 
             cls.means_loaded = True
 
-        means, reference = rid_str.split(":", 1)
+        symbol, reference = rid_str.split(":", 1)
 
-        Means = cls.table[means]
+        Means = cls.table.get(symbol, None)
+
+        if not Means:
+            raise Exception("Means not found")
+
         rid = Means(reference)
         return rid
     

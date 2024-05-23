@@ -1,4 +1,4 @@
-from rid import RID
+from rid_lib import RID
 
 class SlackMessage(RID):
     space="slack"
