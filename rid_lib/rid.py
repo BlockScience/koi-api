@@ -9,7 +9,7 @@ class RID(ABC):
 
     table = {}
 
-    means_delimiter = "/"
+    means_delimiter = "+"
     rid_delimiter = ":"
 
     def __init__(self, reference=None):
@@ -32,12 +32,12 @@ class RID(ABC):
 
             # class properties no longer supported
             cls.table = {
-                f"{m.space}/{m.format}": m for m in means_classes
+                m.space + RID.means_delimiter + m.format: m for m in means_classes
             }
 
             cls.means_loaded = True
 
-        symbol, reference = rid_str.split(":", 1)
+        symbol, reference = rid_str.split(RID.rid_delimiter, 1)
 
         Means = cls.table.get(symbol, None)
 
