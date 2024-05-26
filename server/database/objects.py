@@ -16,3 +16,12 @@ def create(tx, rid):
     }
 
     tx.run(CREATE_OBJECT, rid=str(rid), params=params)
+
+@execute_write
+def delete(tx, rid):
+    DELETE_OBJECT = """
+        MATCH (object {rid: $rid})
+        DETACH DELETE object
+        """
+    
+    tx.run(DELETE_OBJECT, rid=str(rid))
