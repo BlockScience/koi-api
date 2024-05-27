@@ -2,11 +2,15 @@ from .utils import execute_read, execute_write
 
 @execute_write
 def create(tx, rid):
-    CREATE_OBJECT = """
-        MERGE (object {rid: $rid})
+    labels = f"{rid.space}:{rid.format}"
+
+    CREATE_OBJECT = f"""
+        MERGE (object:{labels} {{rid: $rid}})
         SET object += $params
         RETURN object
         """
+    
+    print(CREATE_OBJECT)
     
     params = {
         "space": rid.space,
