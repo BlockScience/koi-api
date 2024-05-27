@@ -32,6 +32,7 @@ def get_rid_file_path(rid: RID):
     return CACHE_DIRECTORY + "/" + encode_b64(str(rid)) + ".json"
 
 def write(rid: RID, data: dict):
+    # caches both json data and hash of data
     file_path = get_rid_file_path(rid)
     
     contents = {

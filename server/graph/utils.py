@@ -1,4 +1,4 @@
-from server.database import neo4j_driver
+from .driver import neo4j_driver
 from server.config import NEO4J_DB
 import functools
 

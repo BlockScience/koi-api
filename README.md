@@ -1,6 +1,37 @@
 # koi-api
 an api...
 
+## API Specification
+
+### (Knowledge) Objects
+
+POST /object
+
+```
+{
+    "rid": "string",
+    "data": {}
+}
+```
+
+GET /object
+
+
+```
+{
+    "rid": "string"
+}
+```
+
+DELETE /object
+
+```
+{
+    "rid": "string"
+}
+```
+
+## TODO
 ### Classes
 - Base RID
     - `space/type:reference` format

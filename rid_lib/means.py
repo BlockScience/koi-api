@@ -5,4 +5,6 @@ class SlackMessage(RID):
     format="message"
 
     def dereference(self):
-        return "slack message"
+        return {
+            "text": "slack message"
+        }
