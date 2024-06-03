@@ -1,1 +1,2 @@
-from rid_lib.rid import RID
+from .rid import RID
+from .means import *

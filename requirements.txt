@@ -1,3 +1,5 @@
 fastapi
 uvicorn
 neo4j
+nanoid
+requests
