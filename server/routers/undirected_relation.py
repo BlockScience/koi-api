@@ -1,12 +1,13 @@
-from fastapi import APIRouter, status, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import List, Optional
 from rid_lib import RID, UndirectedRelation
-from server import graph
+from .. import graph
+from .utils import check_existence
 import nanoid
 
 router = APIRouter(
-    prefix="/relation"
+    prefix="/set"
 )
 
 class CreateRelation(BaseModel):
@@ -22,13 +23,6 @@ def create_relation(rel: CreateRelation):
         "members": members
     }
 
-
-def check_existence(rid: RID):
-    if not graph.undirected_relation.exists(rid):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"RID '{str(rid)}' not found"
-        )
 
 class ReadRelation(BaseModel):
     rid: str
@@ -82,4 +76,4 @@ class DeleteRelation(BaseModel):
 def delete_relation(rel: DeleteRelation):
     rid = RID.from_string(rel.rid)
     check_existence(rid)
-    graph.undirected_relation.delete(rid)
+    graph.node.delete(rid)

@@ -39,6 +39,6 @@ def read_object(obj: Object):
 @router.delete("")
 def delete_object(obj: Object):
     rid = RID.from_string(obj.rid)
-    graph.knowledge_object.delete(rid)
+    graph.node.delete(rid)
     cache.delete(rid)
     return str(rid)

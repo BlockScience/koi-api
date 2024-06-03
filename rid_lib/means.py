@@ -27,3 +27,10 @@ class UndirectedRelation(RID):
 
     def dereference(self):
         pass
+
+class DirectedRelation(RID):
+    space="internal"
+    format="link"
+
+    def dereference(self):
+        pass

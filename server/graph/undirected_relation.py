@@ -4,10 +4,10 @@ from rid_lib import RID
 @execute_write
 def create(tx, rid: RID, members):
     CREATE_UNDIRECTED_RELATION = """
-        MERGE (r:set {rid: $rid}) WITH r
-        UNWIND $member_rids AS member_rid
+        MERGE (r:set {rid: $rid}) 
+        WITH r UNWIND $member_rids AS member_rid
         MATCH (member {rid: member_rid})
-        CREATE (r)-[:HAS]->(member)
+        MERGE (r)-[:HAS]->(member)
         RETURN COLLECT(member.rid) AS member
         """
     
@@ -16,15 +16,7 @@ def create(tx, rid: RID, members):
 
     return members
 
-@execute_read
-def exists(tx, rid: RID):
-    READ_UNDIRECTED_RELATION = """
-        MATCH (r:set {rid: $rid})
-        RETURN r AS relation
-        """
-    
-    relation_record = tx.run(READ_UNDIRECTED_RELATION, rid=str(rid))
-    return relation_record.peek() is not None
+
 
 @execute_read
 def read(tx, rid: RID):
@@ -39,11 +31,8 @@ def read(tx, rid: RID):
     return members
 
 @execute_write
-def update(tx, rid: RID, members_to_add, members_to_remove):
-    if (not members_to_add) and (not members_to_remove):
-        return
-    
-    if members_to_add:
+def update(tx, rid: RID, add_members, remove_members):
+    if add_members:
         ADD_MEMBERS = """
             MATCH (r:set {rid: $rid})
             UNWIND $member_rids AS member_rid  
@@ -51,9 +40,9 @@ def update(tx, rid: RID, members_to_add, members_to_remove):
             MERGE (r)-[:HAS]->(member)  
             """
         
-        tx.run(ADD_MEMBERS, rid=str(rid), member_rids=members_to_add)
+        tx.run(ADD_MEMBERS, rid=str(rid), member_rids=add_members)
     
-    if members_to_remove:
+    if remove_members:
         REMOVE_MEMBERS = """
             MATCH (r:set {rid: $rid})
             UNWIND $member_rids AS member_rid
@@ -61,13 +50,4 @@ def update(tx, rid: RID, members_to_add, members_to_remove):
             DELETE edge
             """
         
-        tx.run(REMOVE_MEMBERS, rid=str(rid), member_rids=members_to_remove)
-
-@execute_write
-def delete(tx, rid: RID):
-    DELETE_UNDIRECTED_RELATION = """
-        MATCH (r:set {rid: $rid})
-        DETACH DELETE r
-        """
-    
-    tx.run(DELETE_UNDIRECTED_RELATION, rid=str(rid))
+        tx.run(REMOVE_MEMBERS, rid=str(rid), member_rids=remove_members)

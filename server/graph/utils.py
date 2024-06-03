@@ -1,5 +1,5 @@
 from .driver import neo4j_driver
-from server.config import NEO4J_DB
+from ..config import NEO4J_DB
 import functools
 
 def execute_read(func):
