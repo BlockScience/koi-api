@@ -15,6 +15,34 @@ requests.post(base_url + "/object", json={
     "rid": str(slack_msg2)
 })
 
-resp = requests.post(base_url + "/relation", json={
-    "members": [str(slack_msg1), str(slack_msg2)]
+resp = requests.post(base_url + "/relation", json={}).json()
+
+
+print(resp)
+
+relation = resp["rid"]
+
+print(requests.get(base_url + "/relation", json={
+    "rid": relation
+}).json())
+
+
+resp = requests.put(base_url + "/relation", json={
+    "rid": relation,
+    "remove_members": [
+        str(slack_msg1)
+    ],
+    "add_members": [
+        str(slack_msg2)
+    ]
+}).json()
+
+print(resp)
+
+requests.delete(base_url + "/relation", json={
+    "rid": relation
 })
+
+print(requests.get(base_url + "/relation", json={
+    "rid": relation
+}).json())
