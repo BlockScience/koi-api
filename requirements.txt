@@ -3,3 +3,7 @@ uvicorn
 neo4j
 nanoid
 requests
+python-dotenv
+
+voyageai
+pinecone-client

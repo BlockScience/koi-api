@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Optional
 from rid_lib import RID
-from server import cache, graph
+from server import graph, cache
 
 router = APIRouter(
     prefix="/object"

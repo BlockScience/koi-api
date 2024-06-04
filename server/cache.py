@@ -36,6 +36,7 @@ def write(rid: RID, data: dict):
     file_path = get_rid_file_path(rid)
     
     contents = {
+        "rid": str(rid),
         "sha256_hash": hash_json(data),
         "data": data
     }
