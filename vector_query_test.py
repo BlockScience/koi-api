@@ -1,7 +1,14 @@
 from server import graph, vectorstore, cache
 from rid_lib import RID
 
-rids = [RID.from_string(rid) for rid in vectorstore.query("What is Metagov's data policy?")]
+print("Enter a query:")
+query = input("> ")
 
-for rid in rids:
-    print(cache.read(rid))
+print("Matched the following objects:\n")
+for rid, score in vectorstore.query(query):
+    rid = RID.from_string(rid)
+    data, _ = cache.read(rid)
+    text = data["text"]
+    print(f"({score}) {str(rid)}")
+    print(text)
+    print()

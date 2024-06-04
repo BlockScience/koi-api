@@ -27,10 +27,14 @@ def embed_objects(rids):
     
     for rid in rids:
         data, hash = cache.read(rid)
+        text = data["text"]
         
-        texts.append(data["text"])
+        texts.append(text)
         meta.append({
-            "sha256_hash": hash
+            "sha256_hash": hash,
+            "character_length": len(text),
+            "space": rid.space,
+            "format": rid.format
         })
 
     embeddings = []
@@ -60,9 +64,16 @@ def query(text):
     query_embedding = vc.embed(
         texts=[text],
         model=VOYAGEAI_MODEL,
-        input_type="query"
+        input_type="query",
     ).embeddings
 
-    result = index.query(vector=query_embedding, top_k=10, include_metadata=True)
+    result = index.query(
+        vector=query_embedding, 
+        filter={
+            "character_length": {"$gt": 250}
+        },
+        top_k=5, 
+        include_metadata=True
+    )
 
-    return [m["id"] for m in result["matches"]]
+    return [(m["id"], m["score"]) for m in result["matches"]]
