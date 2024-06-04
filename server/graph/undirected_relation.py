@@ -8,7 +8,7 @@ def create(tx, rid: RID, members):
         WITH r UNWIND $member_rids AS member_rid
         MATCH (member {rid: member_rid})
         MERGE (r)-[:HAS]->(member)
-        RETURN COLLECT(member.rid) AS member
+        RETURN member.rid AS member
         """
     
     member_records = tx.run(CREATE_UNDIRECTED_RELATION, rid=str(rid), member_rids=members)

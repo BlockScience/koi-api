@@ -24,7 +24,9 @@ def create_object(obj: Object):
         data = rid.dereference()
 
     cache.write(rid, data)
-    return str(rid)
+    return {
+        "rid": str(rid)
+    }
 
 @router.get("")
 def read_object(obj: Object):
@@ -41,4 +43,3 @@ def delete_object(obj: Object):
     rid = RID.from_string(obj.rid)
     graph.node.delete(rid)
     cache.delete(rid)
-    return str(rid)

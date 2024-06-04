@@ -54,6 +54,5 @@ class RID(ABC):
     def __str__(self):
         return self.means + RID.rid_delimiter + self.reference
 
-    @abstractmethod
     def dereference(self):
-        ...
+        pass

@@ -20,17 +20,23 @@ class SlackMessage(RID):
         return {
             "text": "slack message"
         }
+    
+class SlackUser(RID):
+    space="slack"
+    format="user"
+    
+class SlackChannel(RID):
+    space="slack"
+    format="channel"
+
+class SlackWorkspace(RID):
+    space="slack"
+    format="workspace"
 
 class UndirectedRelation(RID):
     space="internal"
     format="set"
 
-    def dereference(self):
-        pass
-
 class DirectedRelation(RID):
     space="internal"
     format="link"
-
-    def dereference(self):
-        pass

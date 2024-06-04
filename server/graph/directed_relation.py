@@ -8,7 +8,7 @@ def create(tx, rid: RID, sources, targets):
         WITH r UNWIND $source_rids AS source_rid
         MATCH (source {rid: source_rid})
         MERGE (r)-[:SOURCE]->(source)
-        RETURN COLLECT(source.rid) AS source
+        RETURN source.rid AS source
         """
     
     source_records = tx.run(CREATE_DIRECTED_RELATION, rid=str(rid), source_rids=sources)
@@ -19,7 +19,7 @@ def create(tx, rid: RID, sources, targets):
         UNWIND $target_rids AS target_rid
         MATCH (target {rid: target_rid})
         MERGE (r)-[:TARGET]->(target)
-        RETURN COLLECT(target.rid) AS target
+        RETURN target.rid AS target
         """
     
     target_records = tx.run(ADD_TARGETS, rid=str(rid), target_rids=targets)
