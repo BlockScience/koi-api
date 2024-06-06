@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import inspect
+from .exceptions import *
 
 class RID(ABC):
     space: str = None
@@ -9,7 +10,7 @@ class RID(ABC):
 
     table = {}
 
-    means_delimiter = "+"
+    means_delimiter = "."
     rid_delimiter = ":"
 
     def __init__(self, reference=None):
@@ -19,6 +20,7 @@ class RID(ABC):
     def from_string(cls, rid_str):
         # generates a table mapping the means symbol to the class
         if not cls.means_loaded:
+            print("loading means table")
             from rid_lib import means
 
             # generates list of all Means derived from RID
@@ -32,17 +34,35 @@ class RID(ABC):
 
             # class properties no longer supported
             cls.table = {
-                m.space + RID.means_delimiter + m.format: m for m in means_classes
+                (m.space, m.format): m for m in means_classes
             }
-
+            
             cls.means_loaded = True
 
-        symbol, reference = rid_str.split(RID.rid_delimiter, 1)
+        rid_components = rid_str.split(RID.rid_delimiter, 1)
+        if len(rid_components) != 2:
+            raise InvalidFormatError(f"Error processing string '{rid_str}': missing RID delimiter '{RID.rid_delimiter}'")
 
-        Means = cls.table.get(symbol, None)
+        symbol, reference = rid_components
+        if not symbol:
+            raise InvalidFormatError(f"Error processing string '{rid_str}': means is empty string")
+        if not reference:
+            raise InvalidFormatError(f"Error processing string '{rid_str}': reference is empty string")
+
+        means_components = symbol.split(RID.means_delimiter)
+        if len(means_components) != 2:
+            raise InvalidFormatError(f"Error processing string '{rid_str}': the means component '{symbol}' should contain exactly one means delimiter '{RID.means_delimiter}'")
+        
+        space, format = means_components
+        if not space:
+            raise InvalidFormatError(f"Error processing string '{rid_str}': space is empty string")
+        if not format:
+            raise InvalidFormatError(f"Error processing string '{rid_str}': format is empty string")
+
+        Means = cls.table.get((space, format), None)
 
         if not Means:
-            raise Exception("Means not found")
+            raise UndefinedMeansError(f"Error processing string '{rid_str}': the means '{symbol}' does not have a class definition")
 
         rid = Means(reference)
         return rid
@@ -53,6 +73,9 @@ class RID(ABC):
     
     def __str__(self):
         return self.means + RID.rid_delimiter + self.reference
+    
+    def __repr__(self):
+        return f"<RID {self.__class__.__name__} object '{str(self)}'>"
 
     def dereference(self):
         pass
