@@ -8,12 +8,12 @@ router = APIRouter(
     prefix="/object"
 )
 
-class Object(BaseModel):
+class CreateObject(BaseModel):
     rid: str
     data: Optional[dict] = None
 
 @router.post("")
-def create_object(obj: Object):
+def create_object(obj: CreateObject):
     rid = RID.from_string(obj.rid)
     graph.knowledge_object.create(rid)
 
@@ -23,13 +23,19 @@ def create_object(obj: Object):
     else:
         data = rid.dereference()
 
-    cache.write(rid, data)
+    if data:
+        cache.write(rid, data)
+    
     return {
         "rid": str(rid)
     }
 
+
+class ReadObject(BaseModel):
+    rid: str
+
 @router.get("")
-def read_object(obj: Object):
+def read_object(obj: ReadObject):
     rid = RID.from_string(obj.rid)
     data, hash = cache.read(rid)
     return {
@@ -39,7 +45,24 @@ def read_object(obj: Object):
     }
 
 @router.delete("")
-def delete_object(obj: Object):
+def delete_object(obj: ReadObject):
     rid = RID.from_string(obj.rid)
     graph.node.delete(rid)
     cache.delete(rid)
+
+
+class ReadObjectLink(BaseModel):
+    rid: str
+    tag: str
+
+@router.get("/link")
+def read_object_link(obj: ReadObjectLink):
+    rid = RID.from_string(obj.rid)
+    link = graph.knowledge_object.read_link(rid)
+    _, targets = graph.directed_relation.read(link)
+    
+    return {
+        "rid": str(rid),
+        "link_rid": str(link),
+        "targets": targets
+    }

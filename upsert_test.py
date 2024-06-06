@@ -1,7 +1,9 @@
 from server import graph, vectorstore
-from rid_lib import RID
+from rid_lib import RID, SlackChannel
 
-
-sources, targets = graph.directed_relation.read(RID.from_string("internal+link:jI1RXTGX_8KOvRrVdUwv8"))
+link = graph.knowledge_object.read_link(
+    SlackChannel("metagov/C06DMGNV7E0")
+)
+sources, targets = graph.directed_relation.read(link)
 
 vectorstore.embed_objects([RID.from_string(t) for t in targets])

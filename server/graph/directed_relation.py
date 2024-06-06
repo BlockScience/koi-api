@@ -2,16 +2,22 @@ from .utils import execute_read, execute_write
 from rid_lib import RID
 
 @execute_write
-def create(tx, rid: RID, sources, targets):
+def create(tx, rid: RID, tag, sources, targets):
     CREATE_DIRECTED_RELATION = """
         MERGE (r:link {rid: $rid})
+        SET r += $params
         WITH r UNWIND $source_rids AS source_rid
         MATCH (source {rid: source_rid})
         MERGE (r)-[:SOURCE]->(source)
         RETURN source.rid AS source
         """
     
-    source_records = tx.run(CREATE_DIRECTED_RELATION, rid=str(rid), source_rids=sources)
+    params = {
+        **rid.params,
+        "tag": tag
+    }
+
+    source_records = tx.run(CREATE_DIRECTED_RELATION, rid=str(rid), params=params, source_rids=sources)
     sources = [record.get("source") for record in source_records]
 
     ADD_TARGETS = """

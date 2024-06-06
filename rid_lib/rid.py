@@ -70,6 +70,16 @@ class RID(ABC):
     @property
     def means(self):
         return self.space + RID.means_delimiter + self.format
+
+    @property
+    def params(self):
+        return {
+            "rid": str(self),
+            "space": self.space,
+            "format": self.format,
+            "means": self.means,
+            "reference": self.reference
+        }
     
     def __str__(self):
         return self.means + RID.rid_delimiter + self.reference

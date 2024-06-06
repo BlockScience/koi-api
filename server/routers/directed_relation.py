@@ -11,13 +11,15 @@ router = APIRouter(
 )
 
 class CreateLink(BaseModel):
+    tag: str
     sources: Optional[List[str]] = []
     targets: Optional[List[str]] = []
 
 @router.post("")
 def create_link(rel: CreateLink):
-    rid = DirectedRelation(nanoid.generate())
-    sources, targets = graph.directed_relation.create(rid, rel.sources, rel.targets)
+    reference = rel.tag + "/" + nanoid.generate()
+    rid = DirectedRelation(reference)
+    sources, targets = graph.directed_relation.create(rid, rel.tag, rel.sources, rel.targets)
 
     return {
         "rid": str(rid),
