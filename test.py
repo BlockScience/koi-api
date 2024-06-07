@@ -1,4 +1,4 @@
-from rid_lib import RID, SlackMessage, UndirectedRelation
+from rid_lib import RID, SlackMessage, Set
 import requests
 import json
 

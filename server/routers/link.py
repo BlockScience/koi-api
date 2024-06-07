@@ -2,7 +2,7 @@ from typing import List, Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
 import nanoid
-from rid_lib import RID, DirectedRelation
+from rid_lib import RID, Link
 from .. import graph
 from .utils import check_existence
 
@@ -18,8 +18,8 @@ class CreateLink(BaseModel):
 @router.post("")
 def create_link(rel: CreateLink):
     reference = rel.tag + "/" + nanoid.generate()
-    rid = DirectedRelation(reference)
-    sources, targets = graph.directed_relation.create(rid, rel.tag, rel.sources, rel.targets)
+    rid = Link(reference)
+    sources, targets = graph.link.create(rid, rel.tag, rel.sources, rel.targets)
 
     return {
         "rid": str(rid),
@@ -36,7 +36,7 @@ def read_link(rel: ReadLink):
     rid = RID.from_string(rel.rid)
     check_existence(rid)
 
-    sources, targets = graph.directed_relation.read(rid)
+    sources, targets = graph.link.read(rid)
 
     return {
         "rid": str(rid),
@@ -72,8 +72,8 @@ def update_link(rel: UpdateLink):
     add_targets -= target_intersection
     remove_targets -= target_intersection
 
-    graph.directed_relation.update(rid, list(add_sources), list(remove_sources), list(add_targets), list(remove_targets))
-    updated_sources, updated_targets = graph.directed_relation.read(rid)
+    graph.link.update(rid, list(add_sources), list(remove_sources), list(add_targets), list(remove_targets))
+    updated_sources, updated_targets = graph.link.read(rid)
 
     return {
         "rid": str(rid),

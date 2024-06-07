@@ -33,10 +33,10 @@ class SlackWorkspace(RID):
     space="slack"
     format="workspace"
 
-class UndirectedRelation(RID):
+class Set(RID):
     space="internal"
     format="set"
 
-class DirectedRelation(RID):
+class Link(RID):
     space="internal"
     format="link"

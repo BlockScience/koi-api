@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import List, Optional
-from rid_lib import RID, UndirectedRelation
+from rid_lib import RID, Set
 from .. import graph
 from .utils import check_existence
 import nanoid
@@ -10,13 +10,13 @@ router = APIRouter(
     prefix="/set"
 )
 
-class CreateRelation(BaseModel):
+class CreateSet(BaseModel):
     members: Optional[List[str]] = []
 
 @router.post("")
-def create_relation(rel: CreateRelation):
-    rid = UndirectedRelation(nanoid.generate())
-    members = graph.undirected_relation.create(rid, rel.members)
+def create_set(rel: CreateSet):
+    rid = Set(nanoid.generate())
+    members = graph.set.create(rid, rel.members)
 
     return {
         "rid": str(rid),
@@ -24,15 +24,15 @@ def create_relation(rel: CreateRelation):
     }
 
 
-class ReadRelation(BaseModel):
+class ReadSet(BaseModel):
     rid: str
 
 @router.get("")
-def read_relation(rel: ReadRelation):
+def read_set(rel: ReadSet):
     rid = RID.from_string(rel.rid)
     check_existence(rid)
 
-    members = graph.undirected_relation.read(rid)
+    members = graph.set.read(rid)
 
     print(str(members))
     return {
@@ -41,13 +41,13 @@ def read_relation(rel: ReadRelation):
     }
 
 
-class UpdateRelation(BaseModel):
+class UpdateSet(BaseModel):
     rid: str
     add_members: Optional[List[str]] = []
     remove_members: Optional[List[str]] = []
 
 @router.put("")
-def update_relation(rel: UpdateRelation):
+def update_set(rel: UpdateSet):
     rid = RID.from_string(rel.rid)
     check_existence(rid)
 
@@ -60,8 +60,8 @@ def update_relation(rel: UpdateRelation):
     add_members -= intersection
     remove_members -= intersection
 
-    graph.undirected_relation.update(rid, list(add_members), list(remove_members))
-    updated_members = graph.undirected_relation.read(rid)
+    graph.set.update(rid, list(add_members), list(remove_members))
+    updated_members = graph.set.read(rid)
 
     return {
         "rid": str(rid),
@@ -69,11 +69,11 @@ def update_relation(rel: UpdateRelation):
     }
 
 
-class DeleteRelation(BaseModel):
+class DeleteSet(BaseModel):
     rid: str
 
 @router.delete("")
-def delete_relation(rel: DeleteRelation):
+def delete_set(rel: DeleteSet):
     rid = RID.from_string(rel.rid)
     check_existence(rid)
     graph.node.delete(rid)

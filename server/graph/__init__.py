@@ -1,4 +1,4 @@
 from . import knowledge_object
-from . import undirected_relation
-from . import directed_relation
+from . import set
+from . import link
 from . import node

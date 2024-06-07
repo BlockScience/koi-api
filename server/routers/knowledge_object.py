@@ -59,7 +59,7 @@ class ReadObjectLink(BaseModel):
 def read_object_link(obj: ReadObjectLink):
     rid = RID.from_string(obj.rid)
     link = graph.knowledge_object.read_link(rid)
-    _, targets = graph.directed_relation.read(link)
+    _, targets = graph.link.read(link)
     
     return {
         "rid": str(rid),

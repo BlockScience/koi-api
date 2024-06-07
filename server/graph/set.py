@@ -3,7 +3,7 @@ from rid_lib import RID
 
 @execute_write
 def create(tx, rid: RID, members):
-    CREATE_UNDIRECTED_RELATION = """
+    CREATE_SET = """
         MERGE (r:set {rid: $rid}) 
         WITH r UNWIND $member_rids AS member_rid
         MATCH (member {rid: member_rid})
@@ -11,7 +11,7 @@ def create(tx, rid: RID, members):
         RETURN member.rid AS member
         """
     
-    member_records = tx.run(CREATE_UNDIRECTED_RELATION, rid=str(rid), member_rids=members)
+    member_records = tx.run(CREATE_SET, rid=str(rid), member_rids=members)
     members = [record.get("member") for record in member_records]
 
     return members
@@ -20,12 +20,12 @@ def create(tx, rid: RID, members):
 
 @execute_read
 def read(tx, rid: RID):
-    READ_UNDIRECTED_RELATION_MEMBERS = """
+    READ_SET_MEMBERS = """
         MATCH (r:set {rid: $rid})-[:HAS]->(member)
         RETURN member.rid AS member
         """
     
-    member_records = tx.run(READ_UNDIRECTED_RELATION_MEMBERS, rid=str(rid))
+    member_records = tx.run(READ_SET_MEMBERS, rid=str(rid))
     members = [record.get("member") for record in member_records]
 
     return members

@@ -3,7 +3,7 @@ from rid_lib import RID
 
 @execute_write
 def create(tx, rid: RID, tag, sources, targets):
-    CREATE_DIRECTED_RELATION = """
+    CREATE_LINK = """
         MERGE (r:link {rid: $rid})
         SET r += $params
         WITH r UNWIND $source_rids AS source_rid
@@ -17,7 +17,7 @@ def create(tx, rid: RID, tag, sources, targets):
         "tag": tag
     }
 
-    source_records = tx.run(CREATE_DIRECTED_RELATION, rid=str(rid), params=params, source_rids=sources)
+    source_records = tx.run(CREATE_LINK, rid=str(rid), params=params, source_rids=sources)
     sources = [record.get("source") for record in source_records]
 
     ADD_TARGETS = """
@@ -35,12 +35,12 @@ def create(tx, rid: RID, tag, sources, targets):
 
 @execute_read
 def read(tx, rid: RID):
-    READ_DIRECTED_RELATION_MEMBERS = """
+    READ_LINK_MEMBERS = """
         MATCH (r:link {rid: $rid})-[e:SOURCE|TARGET]->(member)
         RETURN TYPE(e) AS type, member.rid AS member
         """
     
-    member_records = tx.run(READ_DIRECTED_RELATION_MEMBERS, rid=str(rid))
+    member_records = tx.run(READ_LINK_MEMBERS, rid=str(rid))
     sources = []
     targets = []
 
