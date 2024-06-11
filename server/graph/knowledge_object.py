@@ -13,14 +13,15 @@ def create(tx, rid):
     tx.run(CREATE_OBJECT, rid=str(rid), params=rid.params)
 
 @execute_read
-def read_link(tx, rid):
+def read_link(tx, rid, tag):
     READ_OBJECT_LINK = """
-        MATCH (object {rid: $rid})<-[:SOURCE]-(r:link)
-        RETURN r.rid AS link
+        MATCH (object {rid: $rid})-[:LINK {tag: $tag}]->(target:set)
+        RETURN target.rid AS target
         """
     
-    record = tx.run(READ_OBJECT_LINK, rid=str(rid)).single()
-    link_rid = record.get("link")
+    record = tx.run(READ_OBJECT_LINK, rid=str(rid), tag=tag).single()
 
-    return RID.from_string(link_rid)
+    if record:
+        target_rid = record.get("target", None)
+        return RID.from_string(target_rid)
     

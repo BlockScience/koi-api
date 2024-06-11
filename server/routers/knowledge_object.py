@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, status, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from rid_lib import RID
@@ -58,11 +58,18 @@ class ReadObjectLink(BaseModel):
 @router.get("/link")
 def read_object_link(obj: ReadObjectLink):
     rid = RID.from_string(obj.rid)
-    link = graph.knowledge_object.read_link(rid)
-    _, targets = graph.link.read(link)
+    target = graph.knowledge_object.read_link(rid, obj.tag)
+
+    if not target:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"RID '{str(rid)}' has no link with tag '{obj.tag}'"
+        )
+
+    contains = graph.set.read(target)
     
     return {
         "rid": str(rid),
-        "link_rid": str(link),
-        "targets": targets
+        "target_rid": str(target),
+        "contains": contains
     }

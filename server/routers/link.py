@@ -4,7 +4,6 @@ from pydantic import BaseModel
 import nanoid
 from rid_lib import RID, Link
 from .. import graph
-from .utils import check_existence
 
 router = APIRouter(
     prefix="/link"
@@ -17,12 +16,13 @@ class CreateLink(BaseModel):
 
 @router.post("")
 def create_link(rel: CreateLink):
-    reference = rel.tag + "/" + nanoid.generate()
-    rid = Link(reference)
+    rid = Link.from_params(rel.tag, rel.source, rel.target)
     graph.link.create(rid, rel.tag, rel.source, rel.target)
 
     return {
-        "rid": str(rid)
+        "rid": str(rid),
+        "source": rel.source,
+        "target": rel.target
     }
 
 
