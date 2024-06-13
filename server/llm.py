@@ -19,8 +19,8 @@ system_prompt = {
     "content": "You are a helpful assistant that is a part of KOI Pond, a Knowledge Organization Infrastructure system, that responds to user queries with the help of KOI's knowledge. A user will ask you questions prefixed by 'User:'. Several knowledge objects will be returned from KOI identified by an id in the following format 'Knowledge Object <id>:'. Use this information in addition to the context of the ongoing conversation to respond to the user."
 }
 
-def start_conversation():
-    conversation_id = nanoid.generate()
+def start_conversation(conversation_id=None):
+    conversation_id = conversation_id or nanoid.generate()
     conversations[conversation_id] = [system_prompt]
     return conversation_id
 

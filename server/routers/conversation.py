@@ -1,14 +1,18 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from .. import llm
+from typing import Optional
 
 router = APIRouter(
     prefix="/llm"
 )
 
+class CreateConversation(BaseModel):
+    conversation_id: Optional[str] = None
+
 @router.post("")
-def create_conversation():
-    conversation_id = llm.start_conversation()
+def create_conversation(obj: CreateConversation):
+    conversation_id = llm.start_conversation(obj.conversation_id)
 
     return {
         "conversation_id": conversation_id
