@@ -103,7 +103,7 @@ class Link(RID):
     format="link"
 
     @classmethod
-    def from_params(cls, tag, source, target):
+    def from_params(cls, source, target, tag):
         hashed_link = utils.hash_json({
             "source": source,
             "target": target

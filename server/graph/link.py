@@ -2,7 +2,7 @@ from .utils import execute_read, execute_write
 from rid_lib import RID
 
 @execute_write
-def create(tx, rid: RID, tag, source, target):
+def create(tx, rid: RID, source, target, tag):
     CREATE_LINK = """
         MATCH (source {rid: $source_rid})
         MATCH (target {rid: $target_rid})

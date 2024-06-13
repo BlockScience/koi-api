@@ -5,6 +5,7 @@ from rid_lib import RID, Set
 from .. import graph
 import nanoid
 from ..exceptions import ResourceNotFoundError
+from ..validation import RIDField
 
 router = APIRouter(
     prefix="/set"
@@ -26,31 +27,28 @@ def create_set(obj: CreateSet):
 
 
 class ReadSet(BaseModel):
-    rid: str
+    rid: RIDField
 
 @router.get("")
 def read_set(obj: ReadSet):
-    rid = RID.from_string(obj.rid)
-    members = graph.set.read(rid)
+    members = graph.set.read(obj.rid)
 
     if members is None:
-        raise ResourceNotFoundError(rid)
+        raise ResourceNotFoundError(obj.rid)
 
     return {
-        "rid": str(rid),
+        "rid": str(obj.rid),
         "members": members
     }
 
 
 class UpdateSet(BaseModel):
-    rid: str
+    rid: RIDField
     add_members: Optional[List[str]] = []
     remove_members: Optional[List[str]] = []
 
 @router.put("")
 def update_set(obj: UpdateSet):
-    rid = RID.from_string(obj.rid)
-
     # remove duplicates
     add_members = set(obj.add_members)
     remove_members = set(obj.remove_members)
@@ -60,27 +58,26 @@ def update_set(obj: UpdateSet):
     add_members -= intersection
     remove_members -= intersection
 
-    result = graph.set.update(rid, list(add_members), list(remove_members))
+    result = graph.set.update(obj.rid, list(add_members), list(remove_members))
 
     if result is None:
-        raise ResourceNotFoundError(rid)
+        raise ResourceNotFoundError(obj.rid)
 
     added_members, removed_members = result
 
     return {
-        "rid": str(rid),
+        "rid": str(obj.rid),
         "added_members": added_members,
         "removed_members": removed_members
     }
 
 
 class DeleteSet(BaseModel):
-    rid: str
+    rid: RIDField
 
 @router.delete("")
 def delete_set(obj: DeleteSet):
-    rid = RID.from_string(obj.rid)
-    success = graph.set.delete(rid)
+    success = graph.set.delete(obj.rid)
 
     if not success:
-        raise ResourceNotFoundError(rid)
+        raise ResourceNotFoundError(obj.rid)

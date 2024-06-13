@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from rid_lib import RID, Link
 from .. import graph
 from ..exceptions import ResourceNotFoundError
+from ..validation import RIDField
 
 router = APIRouter(
     prefix="/link"
@@ -21,9 +22,8 @@ def create_link(obj: CreateLink):
             detail=f"Self links are not allowed, source and target must be different"
         )
 
-    params = obj.model_dump()
-    rid = Link.from_params(**params)
-    success = graph.link.create(rid, **params)
+    rid = Link.from_params(obj.source, obj.target, obj.tag)
+    success = graph.link.create(rid, obj.source, obj.target, obj.tag)
 
     if not success:
         raise ResourceNotFoundError(rid, detail="Source and/or target not found")
@@ -36,31 +36,29 @@ def create_link(obj: CreateLink):
 
 
 class ReadLink(BaseModel):
-    rid: str
+    rid: RIDField
 
 @router.get("")
 def read_link(obj: ReadLink):
-    rid = RID.from_string(obj.rid)
-    result = graph.link.read(rid)
+    result = graph.link.read(obj.rid)
 
     if result is None:
-        raise ResourceNotFoundError(rid)
+        raise ResourceNotFoundError(obj.rid)
 
     source, target = result
 
     return {
-        "rid": str(rid),
+        "rid": str(obj.rid),
         "source": source,
         "target": target
     }
 
 class DeleteLink(BaseModel):
-    rid: str
+    rid: RIDField
 
 @router.delete("")
 def delete_link(obj: DeleteLink):
-    rid = RID.from_string(obj.rid)
-    success = graph.link.delete(rid)
+    success = graph.link.delete(obj.rid)
 
     if not success:
-        raise ResourceNotFoundError(rid)
+        raise ResourceNotFoundError(obj.rid)
