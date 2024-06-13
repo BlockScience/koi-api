@@ -50,9 +50,12 @@ def write(rid: RID, data: dict):
 def read(rid: RID):
     file_path = get_rid_file_path(rid)
 
-    with open(file_path, "r") as f:
-        contents = json.load(f)
-        return contents["data"], contents["sha256_hash"]
+    try:
+        with open(file_path, "r") as f:
+            contents = json.load(f)
+            return contents["data"], contents["sha256_hash"]
+    except FileNotFoundError:
+        return None
 
 def delete(rid: RID):
     file_path = get_rid_file_path(rid)

@@ -2,67 +2,96 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Optional
 from rid_lib import RID
-from server import graph, cache
+from .. import graph, cache, vectorstore
+from ..exceptions import ResourceNotFoundError
+from ..validation import RIDField
 
 router = APIRouter(
     prefix="/object"
 )
 
 class CreateObject(BaseModel):
-    rid: str
+    rid: RIDField
     data: Optional[dict] = None
+    use_dereference: Optional[dict] = True
+    overwrite: Optional[bool] = False
+    create_embedding: Optional[bool] = True
 
 @router.post("")
 def create_object(obj: CreateObject):
-    rid = RID.from_string(obj.rid)
-    graph.knowledge_object.create(rid)
+    # rid = RID.from_string(obj.rid)
+    graph.knowledge_object.create(obj.rid)
 
-    # experimental, defaults to internal dereference if no data provided
-    if obj.data:
-        data = obj.data
-    else:
-        data = rid.dereference()
+    existing_data = cache.read(obj.rid)
+    if existing_data is None:
+        if obj.data is not None:
+            print("writing cache with provided data")
+            cache.write(obj.rid, obj.data)
 
-    if data:
-        cache.write(rid, data)
+        elif obj.use_dereference:
+            print("writing cache with dereferenced data")
+            data = obj.rid.dereference()
+            cache.write(obj.rid, data)            
+    
+    elif obj.overwrite:
+        if obj.data is not None:
+            print("overwriting cache with provided data")
+            cache.write(obj.rid, obj.data)
+
+        elif obj.use_dereference:
+            print("overwriting cache with dereferenced data")
+            data = obj.rid.dereference()
+            cache.write(obj.rid, data)
+
+    if obj.create_embedding and (obj.rid.format == "message"):
+        vectorstore.embed_objects([obj.rid])
     
     return {
-        "rid": str(rid)
+        "rid": str(obj.rid)
     }
 
 
 class ReadObject(BaseModel):
-    rid: str
+    rid: RIDField
 
 @router.get("")
 def read_object(obj: ReadObject):
-    rid = RID.from_string(obj.rid)
-    data, hash = cache.read(rid)
+    data, hash = cache.read(obj.rid)
     return {
-        "rid": str(rid),
+        "rid": str(obj.rid),
         "data": data,
         "hash": hash
     }
 
+
+class DeleteObject(BaseModel):
+    rid: RIDField
+
 @router.delete("")
-def delete_object(obj: ReadObject):
-    rid = RID.from_string(obj.rid)
-    graph.node.delete(rid)
-    cache.delete(rid)
+def delete_object(obj: DeleteObject):
+    success = graph.knowledge_object.delete(obj.rid)
+
+    if not success:
+        raise ResourceNotFoundError(obj.rid)
+
+    cache.delete(obj.rid)
 
 
 class ReadObjectLink(BaseModel):
-    rid: str
+    rid: RIDField
     tag: str
 
 @router.get("/link")
 def read_object_link(obj: ReadObjectLink):
-    rid = RID.from_string(obj.rid)
-    link = graph.knowledge_object.read_link(rid)
-    _, targets = graph.directed_relation.read(link)
+    target = graph.knowledge_object.read_link(obj.rid, obj.tag)
+
+    if not target:
+        raise ResourceNotFoundError(obj.rid, detail=f"{obj.rid} has no link with tag '{obj.tag}'")
+
+    members = graph.set.read(target)
     
     return {
-        "rid": str(rid),
-        "link_rid": str(link),
-        "targets": targets
+        "rid": str(obj.rid),
+        "target_rid": str(target),
+        "members": members
     }
