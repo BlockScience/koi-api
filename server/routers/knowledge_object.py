@@ -47,7 +47,8 @@ def create_object(obj: CreateObject):
         vectorstore.embed_objects([obj.rid])
     
     return {
-        "rid": str(obj.rid)
+        "rid": str(obj.rid),
+        "data": cache.read(obj.rid)
     }
 
 

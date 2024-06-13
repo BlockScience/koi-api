@@ -11,7 +11,7 @@ class SlackMessage(RID):
     format="message"
 
     _fields_to_save = [
-        "user", "type", "subtype", "text"
+        "user", "type", "text"
     ]
 
     _domain_workspace_table = {
@@ -87,7 +87,7 @@ class SlackMessage(RID):
         }
 
         user_reference = f"{self.workspace_id}/{data['user']}"
-        data["user_rid"] = SlackUser.from_reference(user_reference)
+        data["user_rid"] = str(SlackUser.from_reference(user_reference))
         return data
     
 class SlackUser(RID):

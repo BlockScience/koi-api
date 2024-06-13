@@ -5,6 +5,7 @@ After=network.target
 [Service]
 WorkingDirectory=/home/dev/koi-api
 ExecStart=/home/dev/koi-api/venv/bin/uvicorn server:app --host 127.0.0.1 --port 8000
+User=dev
 Restart=always
 
 [Install]
