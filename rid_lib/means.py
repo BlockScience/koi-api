@@ -9,8 +9,7 @@ class SlackMessage(RID):
         super().__init__(reference)
 
         components = self.reference.split("/")
-        self.workspace_id, self.channel_id, self.message_id = components
-        self.timestamp = self.message_id[1:-6] + "." + self.message_id[-6:]
+        self.workspace_id, self.channel_id, self.timestamp = components
 
     @classmethod
     def from_url(cls, slack_url):
@@ -18,8 +17,9 @@ class SlackMessage(RID):
 
         workspace = parsed_url.netloc.split(".")[0]
         _, _, channel_id, message_id = parsed_url.path.split("/")
+        timestamp = message_id[1:-6] + "." + message_id[-6:]
 
-        reference = f"{workspace}/{channel_id}/{message_id}"
+        reference = f"{workspace}/{channel_id}/{timestamp}"
 
         return cls(reference)
 
