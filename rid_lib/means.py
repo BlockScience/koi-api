@@ -18,6 +18,12 @@ class SlackMessage(RID):
         "metagov": "TMQ3PKXT9"
     }
 
+    @property
+    def url(self):
+        domain="metagov"
+        url_message_id = "p" + self.message_id.replace(".", "")
+        return f"https://{domain}.slack.com/archives/{self.channel_id}/{url_message_id}"
+
     def __init__(self, workspace_id: str, channel_id: str, message_id: str, thread_id: Optional[str] = None):
         self.workspace_id = workspace_id
         self.channel_id = channel_id
@@ -82,6 +88,7 @@ class SlackMessage(RID):
 
         user_reference = f"{self.workspace_id}/{data['user']}"
         data["user_rid"] = SlackUser.from_reference(user_reference)
+        return data
     
 class SlackUser(RID):
     space="slack"
