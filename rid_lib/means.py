@@ -1,36 +1,86 @@
 from . import RID, utils
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
+from typing import Optional
 
 class SlackMessage(RID):
+    # reference formats: 
+    # <workspace_id>/<channel_id>/<message_id>
+    # <workspace_id>/<channel_id>/<message_id>/<thread_id>
+
     space="slack"
     format="message"
 
-    def __init__(self, reference=None):
-        super().__init__(reference)
+    _fields_to_save = [
+        "user", "type", "subtype", "text"
+    ]
 
-        components = self.reference.split("/")
-        self.workspace_id, self.channel_id, self.timestamp = components
+    _domain_workspace_table = {
+        "metagov": "TMQ3PKXT9"
+    }
 
+    def __init__(self, workspace_id: str, channel_id: str, message_id: str, thread_id: Optional[str] = None):
+        self.workspace_id = workspace_id
+        self.channel_id = channel_id
+        self.message_id = message_id
+        self.thread_id = thread_id
+
+        if thread_id:
+            self.is_in_thread = True
+            self.reference = f"{workspace_id}/{channel_id}/{message_id}/{thread_id}"
+        else:
+            self.is_in_thread = False
+            self.reference = f"{workspace_id}/{channel_id}/{message_id}"
+
+    @classmethod
+    def from_reference(cls, reference):
+        components = reference.split("/")
+        if len(components) in (3, 4):
+            return cls(*components)
+        
+    
+    # need a better way of getting workspace_id from domain
     @classmethod
     def from_url(cls, slack_url):
         parsed_url = urlparse(slack_url)
 
-        workspace = parsed_url.netloc.split(".")[0]
-        _, _, channel_id, message_id = parsed_url.path.split("/")
-        timestamp = message_id[1:-6] + "." + message_id[-6:]
+        domain = parsed_url.netloc.split(".")[0]
+        _, _, channel_id, url_message_id = parsed_url.path.split("/")
+        message_id = url_message_id[1:-6] + "." + url_message_id[-6:]
+        workspace_id = cls._domain_workspace_table.get(domain, None)
 
-        reference = f"{workspace}/{channel_id}/{timestamp}"
+        params = parse_qs(parsed_url.query)
+        if "thread_ts" in params:
+            thread_id = params["thread_ts"][0]
+        else:
+            thread_id = None
 
-        return cls(reference)
+        if not workspace_id:
+            raise Exception(f"SlackMessage cannot be created from url, domain '{domain}' not found in domain workspace table")
+        
+        return cls(workspace_id, channel_id, message_id, thread_id)
 
     def dereference(self):
-        response = utils.slack_client.conversations_history(
-            channel=self.channel_id,
-            oldest=self.timestamp,
-            inclusive=True,
-            limit=1
-        )
-        return response["messages"][0]
+        if self.is_in_thread:
+            response = utils.slack_client.conversations_replies(
+                channel=self.channel_id,
+                ts=self.message_id
+            )
+            message = response["messages"][0]
+        else:
+            response = utils.slack_client.conversations_history(
+                channel=self.channel_id,
+                oldest=self.message_id,
+                inclusive=True,
+                limit=1
+            )
+            message = response["messages"][0]
+
+        return {
+            key: message.get(key, None)
+            for key in self._fields_to_save
+        }
+        
+
     
 class SlackUser(RID):
     space="slack"

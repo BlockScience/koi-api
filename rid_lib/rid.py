@@ -13,8 +13,15 @@ class RID(ABC):
     means_delimiter = "."
     rid_delimiter = ":"
 
-    def __init__(self, reference=None):
+    def __init__(self, reference):
         self.reference = reference
+
+    @classmethod
+    def from_reference(cls, reference):
+        if cls is RID:
+            raise Exception
+        
+        return cls(reference)
 
     @classmethod
     def from_string(cls, rid_str):
@@ -64,7 +71,7 @@ class RID(ABC):
         if not Means:
             raise UndefinedMeansError(f"Error processing string '{rid_str}': the means '{symbol}' does not have a class definition")
 
-        rid = Means(reference)
+        rid = Means.from_reference(reference)
         return rid
     
     @property
@@ -86,6 +93,12 @@ class RID(ABC):
     
     def __repr__(self):
         return f"<RID {self.__class__.__name__} object '{str(self)}'>"
+    
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return str(self) == str(other)
+        else:
+            return False
 
     def dereference(self):
         pass
