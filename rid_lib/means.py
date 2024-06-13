@@ -75,12 +75,13 @@ class SlackMessage(RID):
             )
             message = response["messages"][0]
 
-        return {
+        data = {
             key: message.get(key, None)
             for key in self._fields_to_save
         }
-        
 
+        user_reference = f"{self.workspace_id}/{data['user']}"
+        data["user_rid"] = SlackUser.from_reference(user_reference)
     
 class SlackUser(RID):
     space="slack"

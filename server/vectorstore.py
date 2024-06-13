@@ -29,6 +29,13 @@ def embed_objects(rids):
         data, hash = cache.read(rid)
         text = data["text"]
         
+        prefix_embedding = data.get("prefix_embedding", None)
+        if prefix_embedding:
+            text = prefix_embedding + text
+
+        print(f"embedding {str(rid)}:")
+        print(text)
+        
         texts.append(text)
         meta.append({
             "sha256_hash": hash,

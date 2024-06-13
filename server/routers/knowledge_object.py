@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Optional
 from rid_lib import RID
-from .. import graph, cache
+from .. import graph, cache, vectorstore
 from ..exceptions import ResourceNotFoundError
 from ..validation import RIDField
 
@@ -15,6 +15,7 @@ class CreateObject(BaseModel):
     data: Optional[dict] = None
     use_dereference: Optional[dict] = True
     overwrite: Optional[bool] = False
+    create_embedding: Optional[bool] = True
 
 @router.post("")
 def create_object(obj: CreateObject):
@@ -41,6 +42,9 @@ def create_object(obj: CreateObject):
             print("overwriting cache with dereferenced data")
             data = obj.rid.dereference()
             cache.write(obj.rid, data)
+
+    if obj.create_embedding and (obj.rid.format == "message"):
+        vectorstore.embed_objects([obj.rid])
     
     return {
         "rid": str(obj.rid)
