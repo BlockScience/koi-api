@@ -1,0 +1,11 @@
+[Unit]
+Description=KOI API Service
+After=network.target
+
+[Service]
+WorkingDirectory=/home/dev/koi-api
+ExecStart=/home/dev/koi-api/venv/bin/uvicorn server:app --host 127.0.0.1 --port 8000
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
