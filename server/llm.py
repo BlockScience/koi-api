@@ -6,7 +6,6 @@ import nanoid, json
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-
 try:
     with open("conversations.json", "r") as f:
         conversations = json.load(f)
@@ -25,7 +24,10 @@ def start_conversation(conversation_id=None):
     return conversation_id
 
 def continue_conversation(conversation_id, query):
-    conversation = conversations[conversation_id]
+    conversation = conversations.get(conversation_id)
+    if conversation is None:
+        start_conversation(conversation_id)
+    conversation = conversations.get(conversation_id)
 
     knowledge = ""
     rids = [RID.from_string(rid) for rid, score in vectorstore.query(query)]
