@@ -9,13 +9,12 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 try:
     with open("conversations.json", "r") as f:
         conversations = json.load(f)
-        print(conversations)
 except FileNotFoundError:
     conversations = {}
 
 system_prompt = {
     "role": "system", 
-    "content": "You are a helpful assistant that is a part of KOI Pond, a Knowledge Organization Infrastructure system, that responds to user queries with the help of KOI's knowledge. A user will ask you questions prefixed by 'User:'. Several knowledge objects will be returned from KOI identified by an id in the following format 'Knowledge Object <id>:'. Use this information in addition to the context of the ongoing conversation to respond to the user. If the information provided is insufficient to answer a question, simply convey that to the user, do not make up an answer that doesn't have any basis."
+    "content": "You are a helpful assistant that is a part of KOI Pond, a Knowledge Organization Infrastructure system, that responds to user queries with the help of KOI's knowledge. A user will ask you questions prefixed by 'User:'. Several knowledge objects will be returned from KOI identified by an id in the following format 'Knowledge Object <{id}>'. Ids will take the following format '{space}.{type}:{reference}'. Use this information in addition to the context of the ongoing conversation to respond to the user. If the information provided is insufficient to answer a question, simply convey that to the user, do not make up an answer that doesn't have any basis. YOU MUST CITE ALL PROVIDED SOURCES DIRECTLY AFTER INFORMATION GENERATED BASED ON THAT SOURCE WITH A NUMBERED FOOTNOTE. At the end of your response, connnect each footnote to an id in the following format '{number}: <{id}>' where each numbered footnote is on its own line."
 }
 
 def start_conversation(conversation_id=None):
@@ -31,10 +30,17 @@ def continue_conversation(conversation_id, query):
 
     knowledge = ""
     rids = [RID.from_string(rid) for rid, score in vectorstore.query(query)]
+    print(rids)
     for rid in rids:
         data, _ = cache.read(rid)
+        if not data:
+            data = rid.dereference()
+            cache.write(rid, data)
+
         text = data["text"]
-        knowledge += f"Knowledge Object {str(rid)}:\n{text}\n\n"
+        knowledge += f"Knowledge Object <{str(rid)}>\n{text}\n\n"
+
+    print(knowledge)
 
     response = client.chat.completions.create(
         model="gpt-4o",
