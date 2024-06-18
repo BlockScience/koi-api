@@ -27,7 +27,14 @@ def embed_objects(rids):
     
     for rid in rids:
         data, hash = cache.read(rid)
-        text = data["text"]
+
+        if not data:
+            continue
+
+        text = data.get("text")
+
+        if not text:
+            continue
         
         prefix_embedding = data.get("prefix_embedding", None)
         if prefix_embedding:
@@ -77,7 +84,7 @@ def query(text):
     result = index.query(
         vector=query_embedding, 
         filter={
-            "character_length": {"$gt": 250}
+            "character_length": {"$gt": 100}
         },
         top_k=5, 
         include_metadata=True
