@@ -14,7 +14,7 @@ except FileNotFoundError:
 
 system_prompt = {
     "role": "system", 
-    "content": "You are a helpful assistant that is a part of KOI Pond, a Knowledge Organization Infrastructure system, that responds to user queries with the help of KOI's knowledge. A user will ask you questions prefixed by 'User:'. Several knowledge objects will be returned from KOI identified by an id in the following format 'Knowledge Object <{id}>'. Ids will take the following format '{space}.{type}:{reference}'. Use this information in addition to the context of the ongoing conversation to respond to the user. If the information provided is insufficient to answer a question, simply convey that to the user, do not make up an answer that doesn't have any basis. YOU MUST CITE ALL PROVIDED SOURCES DIRECTLY AFTER INFORMATION GENERATED BASED ON THAT SOURCE WITH A NUMBERED FOOTNOTE. At the end of your response, connnect each footnote to an id in the following format '{number}: <{id}>' where each numbered footnote is on its own line."
+    "content": "You are a helpful assistant that is a part of KOI Pond, a Knowledge Organization Infrastructure system, that responds to user queries with the help of KOI's knowledge. A user will ask you questions prefixed by 'User:'. Several knowledge objects will be returned from KOI identified by an id in the following format 'Knowledge Object [{n}] {id}'. Ids will take the following format '{space}.{type}:{reference}'. The number of the reference will be included in square brackets. Use this information in addition to the context of the ongoing conversation to respond to the user. If the information provided is insufficient to answer a question, simply convey that to the user, do not make up an answer that doesn't have any basis. YOU MUST CITE ALL PROVIDED SOURCES DIRECTLY AFTER INFORMATION GENERATED BASED ON THAT SOURCE WITH A NUMBERED REFERENCE IN THE FOLLOWING FORMAT: '[{n}]' where n is a number, for example '[3]'. THE SOURCES ARE ALREADY PROVIDED TO THE USER, DO NOT INCLUDE FOOTNOTES OR REFERENCES AT THE END OF YOUR MESSAGE."
 }
 
 def start_conversation(conversation_id=None):
@@ -31,14 +31,19 @@ def continue_conversation(conversation_id, query):
     knowledge = ""
     rids = [RID.from_string(rid) for rid, score in vectorstore.query(query)]
     print(rids)
-    for rid in rids:
-        data, _ = cache.read(rid)
-        if not data:
+    for n, rid in enumerate(rids):
+        result = cache.read(rid)
+        if result is None:
             data = rid.dereference()
             cache.write(rid, data)
+        else:
+            data, _ = result
 
         text = data["text"]
-        knowledge += f"Knowledge Object <{str(rid)}>\n{text}\n\n"
+        knowledge += f"Knowledge Object [{n+1}] {str(rid)}\n{text}\n\n"
+
+
+    # knowledge += "Footnotes:\n" + footnote_table
 
     print(knowledge)
 
@@ -46,17 +51,24 @@ def continue_conversation(conversation_id, query):
         model="gpt-4o",
         messages=conversation + [{
             "role": "user",
-            "content": f"User: {query}\n\n{knowledge}"
+            "content": query + "\n\n" + knowledge
         }]
     )
 
     # not including knowledge in conversation history, only active query
     conversation.append({
         "role": "user",
-        "content": f"User: {query}"
+        "content": query
     })
 
     bot_message = response.choices[0].message.content
+
+    footnote_table = ""
+    for n, rid in enumerate(rids):
+        line = f"{n+1}: <{rid.url}|{rid}>"
+        if f"[{n+1}]" not in bot_message:
+            line = f"~{line}~"
+        footnote_table += line + "\n"
     
     conversation.append({
         "role": "assistant",
@@ -66,4 +78,4 @@ def continue_conversation(conversation_id, query):
     with open("conversations.json", "w") as f:
         json.dump(conversations, f, indent=2)
 
-    return bot_message
+    return bot_message + "\n\n" + footnote_table

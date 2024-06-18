@@ -55,7 +55,7 @@ def read(rid: RID):
             contents = json.load(f)
             return contents["data"], contents["sha256_hash"]
     except FileNotFoundError:
-        return None, None
+        return None
 
 def delete(rid: RID):
     file_path = get_rid_file_path(rid)
