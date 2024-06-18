@@ -30,7 +30,7 @@ def read(tx, rid: RID):
         return record["members"]
 
 @execute_write
-def update(tx, rid: RID, add_members, remove_members):
+def update(tx, rid: RID, add_members=[], remove_members=[]):
     added_members = []
     removed_members = []
 

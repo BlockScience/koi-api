@@ -16,7 +16,7 @@ def create(tx, rid: RID, source, target, tag):
         "tag": tag
     }
 
-    record = tx.run(CREATE_LINK, rid=str(rid), params=params, source_rid=source, target_rid=target).single()
+    record = tx.run(CREATE_LINK, rid=str(rid), params=params, source_rid=str(source), target_rid=str(target)).single()
     return record is not None
     
 @execute_read

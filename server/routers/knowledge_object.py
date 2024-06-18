@@ -1,7 +1,8 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import Optional
-from rid_lib import RID
+from typing import Optional, List
+from rid_lib import Set, Link
+import nanoid
 from .. import graph, cache, vectorstore
 from ..exceptions import ResourceNotFoundError
 from ..validation import RIDField
@@ -96,3 +97,27 @@ def read_object_link(obj: ReadObjectLink):
         "target_rid": str(target),
         "members": members
     }
+
+
+class MergeLinkedSet(BaseModel):
+    rid: RIDField
+    tag: str
+    members: List[str] 
+
+@router.post("/link")
+def merge_linked_set(obj: MergeLinkedSet):
+    target = graph.knowledge_object.read_link(obj.rid, obj.tag)
+    
+    if not target:
+        set_rid = Set(nanoid.generate())
+        members = graph.set.create(set_rid, obj.members)
+        link_rid = Link.from_params(obj.rid, set_rid, obj.tag)
+        graph.link.create(link_rid, obj.rid, set_rid, obj.tag)
+    else:
+        members = graph.set.update(target, add_members=obj.members)
+
+    return {
+        "rid": obj.rid,
+        "members": members
+    }
+        

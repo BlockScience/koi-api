@@ -112,6 +112,11 @@ class Link(RID):
 
     @classmethod
     def from_params(cls, source, target, tag):
+        if isinstance(source, RID):
+            source = str(source)
+        if isinstance(target, RID):
+            target = str(target)
+
         hashed_link = utils.hash_json({
             "source": source,
             "target": target
