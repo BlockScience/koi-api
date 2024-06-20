@@ -1,9 +1,34 @@
 from server.config import CACHE_DIRECTORY
 from rid_lib import RID
 from base64 import urlsafe_b64encode, urlsafe_b64decode
+from typing import Optional
 import json
 import hashlib
 import os
+
+class CacheableObject:
+    def __init__(self, rid: RID, data: Optional[dict] = None, metadata: Optional[dict] = None):
+        self.rid = rid
+        self.data = data
+        self.metadata = metadata
+
+    @classmethod
+    def from_json(cls, json_object):
+        if (json_object is None) or (json_object == {}):
+            raise Exception("Invalid JSON body read from cached file")
+
+        return cls(
+            RID.from_string(json_object.get("rid")),
+            json_object.get("data"),
+            json_object.get("metadata")
+        )
+
+    def json(self):
+        return {
+            "rid": str(self.rid),
+            "data": self.data,
+            "metadata": self.metadata
+        }
 
 def encode_b64(string: str):
     encoded_bytes = urlsafe_b64encode(string.encode())
@@ -36,26 +61,28 @@ def write(rid: RID, data: dict):
         os.makedirs("cache")
 
     # caches both json data and hash of data
-    file_path = get_rid_file_path(rid)
-    
-    contents = {
-        "rid": str(rid),
-        "sha256_hash": hash_json(data),
-        "data": data
+    metadata = {
+        "sha256_hash": hash_json(data)
     }
 
+    cached_object = CacheableObject(rid, data, metadata)
+
+    file_path = get_rid_file_path(rid)
+
     with open(file_path, "w") as f:
-        json.dump(contents, f, indent=2)
+        json.dump(cached_object.json(), f, indent=2)
+
+    return cached_object
 
 def read(rid: RID):
     file_path = get_rid_file_path(rid)
 
     try:
         with open(file_path, "r") as f:
-            contents = json.load(f)
-            return contents["data"], contents["sha256_hash"]
+            json_object = json.load(f)
+            return CacheableObject.from_json(json_object)
     except FileNotFoundError:
-        return None
+        return CacheableObject(rid)
 
 def delete(rid: RID):
     file_path = get_rid_file_path(rid)

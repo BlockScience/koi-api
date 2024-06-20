@@ -24,7 +24,10 @@ class RID(ABC):
         return cls(reference)
 
     @classmethod
-    def from_string(cls, rid_str):
+    def from_string(cls, rid_str: str):
+        if type(rid_str) is not str:
+            raise Exception("RID must inputted as a string")
+
         # generates a table mapping the means symbol to the class
         if not cls.means_loaded:
             print("loading means table")

@@ -32,14 +32,11 @@ def continue_conversation(conversation_id, query):
     rids = [RID.from_string(rid) for rid, score in vectorstore.query(query)]
     print(rids)
     for n, rid in enumerate(rids):
-        result = cache.read(rid)
-        if result is None:
-            data = rid.dereference()
-            cache.write(rid, data)
-        else:
-            data, _ = result
-
-        text = data["text"]
+        cached_object = cache.read(rid)
+        if cached_object.data is None:
+            cached_object = cache.write(rid, rid.dereference())
+        
+        text = cached_object.data["text"]
         knowledge += f"Knowledge Object [{n+1}] {str(rid)}\n{text}\n\n"
 
 

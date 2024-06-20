@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Path
 from pydantic import BaseModel
 from typing import Optional, List
 from rid_lib import Set, Link
@@ -20,37 +20,33 @@ class CreateObject(BaseModel):
 
 @router.post("")
 def create_object(obj: CreateObject):
-    # rid = RID.from_string(obj.rid)
     graph.knowledge_object.create(obj.rid)
 
-    existing_data = cache.read(obj.rid)
-    if existing_data is None:
+    cached_object = cache.read(obj.rid)
+    if cached_object.data is None:
         if obj.data is not None:
             print("writing cache with provided data")
-            cache.write(obj.rid, obj.data)
+            cached_object = cache.write(obj.rid, obj.data)
 
         elif obj.use_dereference:
             print("writing cache with dereferenced data")
             data = obj.rid.dereference()
-            cache.write(obj.rid, data)            
+            cached_object = cache.write(obj.rid, data)            
     
     elif obj.overwrite:
         if obj.data is not None:
             print("overwriting cache with provided data")
-            cache.write(obj.rid, obj.data)
+            cached_object = cache.write(obj.rid, obj.data)
 
         elif obj.use_dereference:
             print("overwriting cache with dereferenced data")
             data = obj.rid.dereference()
-            cache.write(obj.rid, data)
+            cached_object = cache.write(obj.rid, data)
 
     if obj.create_embedding and (obj.rid.format == "message"):
         vectorstore.embed_objects([obj.rid])
     
-    return {
-        "rid": str(obj.rid),
-        "data": cache.read(obj.rid)
-    }
+    return cached_object.json()
 
 
 class ReadObject(BaseModel):
@@ -58,13 +54,13 @@ class ReadObject(BaseModel):
 
 @router.get("")
 def read_object(obj: ReadObject):
-    data, hash = cache.read(obj.rid)
-    return {
-        "rid": str(obj.rid),
-        "data": data,
-        "hash": hash
-    }
+    cached_object = cache.read(obj.rid)
+    return cached_object.json()
 
+
+@router.get("/{encoded_id:path}")
+def read_object_path(encoded_id: str):
+    return encoded_id
 
 class DeleteObject(BaseModel):
     rid: RIDField

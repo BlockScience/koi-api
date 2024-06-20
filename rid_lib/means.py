@@ -15,7 +15,8 @@ class SlackMessage(RID):
     ]
 
     _domain_workspace_table = {
-        "metagov": "TMQ3PKXT9"
+        "metagov": "TMQ3PKXT9",
+        "blockscienceteam": "TA2E6KPK3"
     }
 
     @property
