@@ -6,22 +6,36 @@ class RID(ABC):
     space: str = None
     format: str = None
 
-    means_loaded = False
-
-    table = {}
+    table = None
 
     means_delimiter = "."
     rid_delimiter = ":"
+    
+    def __str__(self):
+        return self.means + RID.rid_delimiter + self.reference
+    
+    def __repr__(self):
+        return f"<RID {self.__class__.__name__} object '{str(self)}'>"
+    
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return str(self) == str(other)
+        else:
+            return False
 
-    def __init__(self, reference):
-        self.reference = reference
+    @property
+    def means(self):
+        return self.space + RID.means_delimiter + self.format
 
-    @classmethod
-    def from_reference(cls, reference):
-        if cls is RID:
-            raise Exception
-        
-        return cls(reference)
+    @property
+    def params(self):
+        return {
+            "rid": str(self),
+            "space": self.space,
+            "format": self.format,
+            "means": self.means,
+            "reference": self.reference
+        }
 
     @classmethod
     def from_string(cls, rid_str: str):
@@ -29,7 +43,7 @@ class RID(ABC):
             raise Exception("RID must inputted as a string")
 
         # generates a table mapping the means symbol to the class
-        if not cls.means_loaded:
+        if not RID.table:
             print("loading means table")
             from rid_lib import means
 
@@ -47,8 +61,6 @@ class RID(ABC):
                 (m.space, m.format): m for m in means_classes
             }
             
-            cls.means_loaded = True
-
         rid_components = rid_str.split(RID.rid_delimiter, 1)
         if len(rid_components) != 2:
             raise InvalidFormatError(f"Error processing string '{rid_str}': missing RID delimiter '{RID.rid_delimiter}'")
@@ -77,31 +89,11 @@ class RID(ABC):
         rid = Means.from_reference(reference)
         return rid
     
-    @property
-    def means(self):
-        return self.space + RID.means_delimiter + self.format
+    @classmethod
+    @abstractmethod
+    def from_reference(cls, reference):
+        ...
 
-    @property
-    def params(self):
-        return {
-            "rid": str(self),
-            "space": self.space,
-            "format": self.format,
-            "means": self.means,
-            "reference": self.reference
-        }
-    
-    def __str__(self):
-        return self.means + RID.rid_delimiter + self.reference
-    
-    def __repr__(self):
-        return f"<RID {self.__class__.__name__} object '{str(self)}'>"
-    
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return str(self) == str(other)
-        else:
-            return False
-
+    @abstractmethod
     def dereference(self):
-        pass
+        ...
