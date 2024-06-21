@@ -1,4 +1,4 @@
-from ..base import SlackSpace
+from ..base import SlackSpace, RID
 
 class SlackWorkspace(SlackSpace):
     format="workspace"
@@ -16,3 +16,5 @@ class SlackWorkspace(SlackSpace):
     def dereference(self):
         workspace_data = self.app.client.team_info(team=self.workspace_id)["team"]
         return workspace_data
+    
+RID._add_type(SlackWorkspace)

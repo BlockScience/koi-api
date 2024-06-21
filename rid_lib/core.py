@@ -1,12 +1,11 @@
 from abc import ABC, abstractmethod
-import inspect
 from .exceptions import *
 
 class RID(ABC):
     space: str = None
     format: str = None
 
-    table = None
+    table = {}
 
     means_delimiter = "."
     rid_delimiter = ":"
@@ -22,44 +21,15 @@ class RID(ABC):
             return str(self) == str(other)
         else:
             return False
+        
+    @staticmethod
+    def _add_type(Type):
+        RID.table[(Type.space, Type.format)] = Type
 
-    @property
-    def means(self):
-        return self.space + RID.means_delimiter + self.format
-
-    @property
-    def params(self):
-        return {
-            "rid": str(self),
-            "space": self.space,
-            "format": self.format,
-            "means": self.means,
-            "reference": self.reference
-        }
-
-    @classmethod
-    def from_string(cls, rid_str: str):
+    @staticmethod
+    def from_string(rid_str: str):
         if type(rid_str) is not str:
             raise Exception("RID must inputted as a string")
-
-        # generates a table mapping the means symbol to the class
-        if not RID.table:
-            print("loading means table")
-            from rid_lib import means
-
-            # generates list of all Means derived from RID
-            means_classes = [
-                m[1] for m in
-                inspect.getmembers(means)
-                if inspect.isclass(m[1]) and
-                issubclass(m[1], RID) and
-                m[1] is not RID 
-            ]
-
-            # class properties no longer supported
-            cls.table = {
-                (m.space, m.format): m for m in means_classes
-            }
             
         rid_components = rid_str.split(RID.rid_delimiter, 1)
         if len(rid_components) != 2:
@@ -81,13 +51,27 @@ class RID(ABC):
         if not format:
             raise InvalidFormatError(f"Error processing string '{rid_str}': format is empty string")
 
-        Means = cls.table.get((space, format), None)
+        Type = RID.table.get((space, format))
 
-        if not Means:
+        if Type is None:
             raise UndefinedMeansError(f"Error processing string '{rid_str}': the means '{symbol}' does not have a class definition")
 
-        rid = Means.from_reference(reference)
+        rid = Type.from_reference(reference)
         return rid
+    
+    @property
+    def means(self):
+        return self.space + RID.means_delimiter + self.format
+
+    @property
+    def params(self):
+        return {
+            "rid": str(self),
+            "space": self.space,
+            "format": self.format,
+            "means": self.means,
+            "reference": self.reference
+        }
     
     @classmethod
     @abstractmethod

@@ -1,6 +1,6 @@
 from urllib.parse import urlparse
 
-from ..base import SlackSpace
+from ..base import SlackSpace, RID
 
 
 class SlackUser(SlackSpace):
@@ -42,3 +42,5 @@ class SlackUser(SlackSpace):
 
         user_data["profile"] = profile_data
         return user_data
+    
+RID._add_type(SlackUser)

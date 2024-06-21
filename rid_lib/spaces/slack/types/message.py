@@ -1,7 +1,7 @@
 from typing import Optional
 from urllib.parse import urlparse, parse_qs
 
-from ..base import SlackSpace
+from ..base import SlackSpace, RID
 
 
 class SlackMessage(SlackSpace):
@@ -75,3 +75,5 @@ class SlackMessage(SlackSpace):
             message_data = response["messages"][0]
             
         return message_data
+
+RID._add_type(SlackMessage)

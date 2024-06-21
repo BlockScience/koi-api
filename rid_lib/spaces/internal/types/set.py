@@ -1,4 +1,4 @@
-from ..base import InternalSpace
+from ..base import InternalSpace, RID
 
 class InternalSet(InternalSpace):
     format = "set"
@@ -12,3 +12,5 @@ class InternalSet(InternalSpace):
     
     def dereference(self):
         return None
+    
+RID._add_type(InternalSet)

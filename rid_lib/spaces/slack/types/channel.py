@@ -1,6 +1,6 @@
 from urllib.parse import urlparse
 
-from ..base import SlackSpace
+from ..base import SlackSpace, RID
 
 
 class SlackChannel(SlackSpace):
@@ -39,3 +39,5 @@ class SlackChannel(SlackSpace):
     def dereference(self):
         channel_data = self.app.client.conversations_info(channel=self.channel_id)["channel"]
         return channel_data
+
+RID._add_type(SlackChannel)

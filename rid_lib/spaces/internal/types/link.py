@@ -2,8 +2,7 @@ import json
 import hashlib
 from typing import Union
 
-from ....core import RID
-from ..base import InternalSpace
+from ..base import InternalSpace, RID
 
 class InternalLink(InternalSpace):
     format="link"
@@ -37,3 +36,5 @@ class InternalLink(InternalSpace):
     
     def dereference(self):
         return None
+
+RID._add_type(InternalLink)
