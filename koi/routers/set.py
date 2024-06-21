@@ -1,11 +1,14 @@
+from typing import List, Optional
+
 from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import List, Optional
-from rid_lib import RID, Set
-from .. import graph
 import nanoid
-from ..exceptions import ResourceNotFoundError
-from ..validation import RIDField
+from rid_lib.spaces.internal import InternalSet
+
+from koi import graph
+from koi.exceptions import ResourceNotFoundError
+from koi.validators import RIDField
+
 
 router = APIRouter(
     prefix="/set"
@@ -17,7 +20,7 @@ class CreateSet(BaseModel):
 
 @router.post("")
 def create_set(obj: CreateSet):
-    rid = Set(nanoid.generate())
+    rid = InternalSet(nanoid.generate())
     members = graph.set.create(rid, obj.members)
 
     return {

@@ -1,8 +1,16 @@
 import voyageai
 from pinecone import Pinecone, ServerlessSpec
-import numpy as np
-from .config import VOYAGEAI_API_KEY, PINECONE_API_KEY, PINECONE_INDEX_NAME, EMBEDDINGS_DIMENSION, VOYAGEAI_MODEL, VOYAGEAI_BATCH_SIZE
+
+from .config import (
+    VOYAGEAI_API_KEY, 
+    PINECONE_API_KEY, 
+    PINECONE_INDEX_NAME, 
+    EMBEDDINGS_DIMENSION, 
+    VOYAGEAI_MODEL, 
+    VOYAGEAI_BATCH_SIZE
+)
 from . import cache
+
 
 pc = Pinecone(api_key=PINECONE_API_KEY)
 vc = voyageai.Client(api_key=VOYAGEAI_API_KEY)

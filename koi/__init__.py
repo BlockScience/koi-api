@@ -1,10 +1,12 @@
 from fastapi import FastAPI
-from server.routers import (
+
+from koi.routers import (
     conversation,
     knowledge_object,
     link,
     set
 )
+
 
 app = FastAPI()
 app.include_router(knowledge_object.router)

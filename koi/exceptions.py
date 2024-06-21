@@ -1,5 +1,5 @@
-from rid_lib import RID
 from fastapi import HTTPException, status
+from rid_lib import RID
 
 class ResourceNotFoundError(HTTPException):
     def __init__(self, rid: RID, detail=None):

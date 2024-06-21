@@ -1,11 +1,14 @@
-from fastapi import APIRouter, Path
-from pydantic import BaseModel
 from typing import Optional, List
-from rid_lib import Set, Link
+
+from fastapi import APIRouter
+from pydantic import BaseModel
 import nanoid
-from .. import graph, cache, vectorstore
-from ..exceptions import ResourceNotFoundError
-from ..validation import RIDField
+from rid_lib.spaces.internal import InternalLink, InternalSet
+
+from koi import graph, cache, vectorstore
+from koi.exceptions import ResourceNotFoundError
+from koi.validators import RIDField
+
 
 router = APIRouter(
     prefix="/object"
@@ -58,9 +61,9 @@ def read_object(obj: ReadObject):
     return cached_object.json()
 
 
-@router.get("/{encoded_id:path}")
-def read_object_path(encoded_id: str):
-    return encoded_id
+# @router.get("/{encoded_id:path}")
+# def read_object_path(encoded_id: str):
+#     return encoded_id
 
 class DeleteObject(BaseModel):
     rid: RIDField
@@ -85,6 +88,8 @@ def read_object_link(obj: ReadObjectLink):
 
     if not target:
         raise ResourceNotFoundError(obj.rid, detail=f"{obj.rid} has no link with tag '{obj.tag}'")
+    
+    print("yo")
 
     members = graph.set.read(target)
     
@@ -105,9 +110,9 @@ def merge_linked_set(obj: MergeLinkedSet):
     target = graph.knowledge_object.read_link(obj.rid, obj.tag)
     
     if not target:
-        set_rid = Set(nanoid.generate())
+        set_rid = InternalSet(nanoid.generate())
         members = graph.set.create(set_rid, obj.members)
-        link_rid = Link.from_params(obj.rid, set_rid, obj.tag)
+        link_rid = InternalLink(obj.rid, set_rid, obj.tag)
         graph.link.create(link_rid, obj.rid, set_rid, obj.tag)
     else:
         members = graph.set.update(target, add_members=obj.members)

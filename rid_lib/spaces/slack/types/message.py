@@ -1,7 +1,8 @@
 from typing import Optional
 from urllib.parse import urlparse, parse_qs
 
-from ..base import SlackSpace, RID
+from rid_lib.core import RID
+from ..base import SlackSpace
 
 
 class SlackMessage(SlackSpace):
@@ -36,6 +37,8 @@ class SlackMessage(SlackSpace):
         components = reference.split("/")
         if len(components) in (3, 4):
             return cls(*components)
+        else:
+            raise 
         
     # need a better way of getting workspace_id from domain
     @classmethod

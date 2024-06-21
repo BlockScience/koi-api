@@ -1,6 +1,7 @@
 from urllib.parse import urlparse
 
-from ..base import SlackSpace, RID
+from rid_lib.core import RID
+from ..base import SlackSpace
 
 
 class SlackChannel(SlackSpace):

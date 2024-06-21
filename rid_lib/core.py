@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
+
 from .exceptions import *
+
 
 class RID(ABC):
     space: str = None
@@ -29,7 +31,7 @@ class RID(ABC):
     @staticmethod
     def from_string(rid_str: str):
         if type(rid_str) is not str:
-            raise Exception("RID must inputted as a string")
+            raise InvalidFormatError("RID must inputted as a string")
             
         rid_components = rid_str.split(RID.rid_delimiter, 1)
         if len(rid_components) != 2:

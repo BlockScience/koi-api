@@ -1,4 +1,4 @@
-from server import graph, vectorstore
+from koi import graph, vectorstore
 from rid_lib import RID, SlackChannel
 
 link = graph.knowledge_object.read_link(

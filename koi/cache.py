@@ -1,10 +1,13 @@
-from server.config import CACHE_DIRECTORY
-from rid_lib import RID
-from base64 import urlsafe_b64encode, urlsafe_b64decode
 from typing import Optional
 import json
 import hashlib
 import os
+from base64 import urlsafe_b64encode, urlsafe_b64decode
+
+from rid_lib import RID
+
+from koi.config import CACHE_DIRECTORY
+
 
 class CacheableObject:
     def __init__(self, rid: RID, data: Optional[dict] = None, metadata: Optional[dict] = None):

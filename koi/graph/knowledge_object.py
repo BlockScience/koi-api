@@ -1,5 +1,7 @@
-from .utils import execute_write, execute_read
 from rid_lib import RID
+
+from .utils import execute_write, execute_read
+
 
 @execute_write
 def create(tx, rid: RID):

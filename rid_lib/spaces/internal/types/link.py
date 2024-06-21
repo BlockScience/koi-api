@@ -2,7 +2,8 @@ import json
 import hashlib
 from typing import Union
 
-from ..base import InternalSpace, RID
+from rid_lib.core import RID
+from ..base import InternalSpace
 
 class InternalLink(InternalSpace):
     format="link"

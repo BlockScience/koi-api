@@ -1,4 +1,5 @@
-from ..base import SlackSpace, RID
+from rid_lib.core import RID
+from ..base import SlackSpace
 
 class SlackWorkspace(SlackSpace):
     format="workspace"

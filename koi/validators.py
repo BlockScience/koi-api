@@ -1,13 +1,15 @@
+from typing import Annotated
+
+from pydantic import AfterValidator, PlainSerializer
+from pydantic_core import PydanticCustomError
 from rid_lib import RID
 from rid_lib.exceptions import (
     InvalidFormatError,
     UndefinedMeansError
 )
-from typing import Annotated
-from pydantic import AfterValidator, PlainSerializer
-from pydantic_core import PydanticCustomError
 
-def validator(rid):
+
+def rid_validator(rid):
     try:
         return RID.from_string(rid)
     except (InvalidFormatError, UndefinedMeansError) as error:
@@ -16,6 +18,6 @@ def validator(rid):
 
 RIDField = Annotated[
     str,
-    AfterValidator(validator),
+    AfterValidator(rid_validator),
     PlainSerializer(lambda rid: str(rid), return_type=str)
 ]

@@ -1,4 +1,4 @@
-from server import graph, vectorstore, cache
+from koi import graph, vectorstore, cache
 from rid_lib import RID
 
 print("Enter a query:")

@@ -1,7 +1,10 @@
+from typing import Optional
+
 from fastapi import APIRouter
 from pydantic import BaseModel
-from .. import llm
-from typing import Optional
+
+from koi import llm
+
 
 router = APIRouter(
     prefix="/llm"

@@ -1,7 +1,7 @@
 import slack_bolt
 
-from ... import RID
-from ...config import (
+from rid_lib.core import RID
+from rid_lib.config import (
     SLACK_BOT_TOKEN,
     SLACK_SIGNING_SECRET
 )

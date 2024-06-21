@@ -1,8 +1,12 @@
+import json
+
 from openai import OpenAI
+import nanoid
+from rid_lib import RID
+
 from .config import OPENAI_API_KEY
 from . import vectorstore, cache
-from rid_lib import RID
-import nanoid, json
+
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
