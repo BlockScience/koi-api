@@ -32,21 +32,10 @@ class SlackChannel(SlackSpace):
         workspace_id = cls._domain_workspace_table.get(domain)
 
         if not workspace_id:
-            raise Exception(f"SlackMessage cannot be created from url, domain '{domain}' not found in domain workspace table")
+            raise Exception(f"SlackChannel cannot be created from url, domain '{domain}' not found in domain workspace table")
         
         return cls(workspace_id, channel_id)
         
     def dereference(self):
-        response = self.app.client.conversations_info(
-            channel=self.channel_id
-        )
-        channel = response["channel"]
-
-        data = {
-            "id": channel.get("id"),
-            "name": channel.get("name"),
-            "topic": channel.get("topic", {}).get("value"),
-            "description": channel.get("purpose", {}).get("value")
-        }
-
-        return data
+        channel_data = self.app.client.conversations_info(channel=self.channel_id)["channel"]
+        return channel_data

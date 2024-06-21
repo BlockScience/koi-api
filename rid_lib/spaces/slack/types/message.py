@@ -11,10 +11,6 @@ class SlackMessage(SlackSpace):
 
     format = "message"
 
-    _fields_to_save = [
-        "user", "type", "ts", "text", "thread_ts"
-    ]
-
     @property
     def url(self):
         url_message_id = "p" + self.message_id.replace(".", "")
@@ -68,7 +64,7 @@ class SlackMessage(SlackSpace):
                 channel=self.channel_id,
                 ts=self.message_id
             )
-            message = response["messages"][0]
+            message_data = response["messages"][0]
         else:
             response = self.app.client.conversations_history(
                 channel=self.channel_id,
@@ -76,10 +72,6 @@ class SlackMessage(SlackSpace):
                 inclusive=True,
                 limit=1
             )
-            message = response["messages"][0]
-
-        data = {
-            key: message.get(key)
-            for key in self._fields_to_save
-        }
-        return data
+            message_data = response["messages"][0]
+            
+        return message_data

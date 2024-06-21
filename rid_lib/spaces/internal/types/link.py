@@ -26,7 +26,7 @@ class InternalLink(InternalSpace):
             hash.update(json_bytes)
             link_hash = hash.hexdigest()
 
-            self.reference = tag + "+" + link_hash
+            self.reference = f"{tag}+{link_hash}"
         
         else:
             raise TypeError("InternalLink must be instantiated with a reference or a source, target, and tag")
