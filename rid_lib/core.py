@@ -24,6 +24,9 @@ class RID(ABC):
         else:
             return False
         
+    def __hash__(self):
+        return hash(str(self))
+        
     @staticmethod
     def _add_type(Type):
         RID.table[(Type.space, Type.format)] = Type

@@ -8,7 +8,8 @@ from koi.validators import RIDField
 
 
 router = APIRouter(
-    prefix="/link"
+    prefix="/link",
+    tags=["Link"]
 )
 
 class CreateLink(BaseModel):

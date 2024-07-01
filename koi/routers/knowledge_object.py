@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, Union, List, Dict
 
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -10,18 +10,16 @@ from koi.exceptions import ResourceNotFoundError
 from koi.validators import RIDField
 
 
-router = APIRouter(
-    prefix="/object"
-)
+router = APIRouter(tags=["Knowledge Object"])
 
 class CreateObject(BaseModel):
     rid: RIDField
     data: Optional[dict] = None
-    use_dereference: Optional[dict] = True
+    use_dereference: Optional[bool] = True
     overwrite: Optional[bool] = False
     create_embedding: Optional[bool] = True
 
-@router.post("")
+@router.post("/object")
 def create_object(obj: CreateObject):
     graph.knowledge_object.create(obj.rid)
 
@@ -52,10 +50,52 @@ def create_object(obj: CreateObject):
     return cached_object.json()
 
 
+class CreateObjects(BaseModel):
+    rids: Dict[RIDField, Union[dict, None]]
+    use_dereference: Optional[bool] = True
+    overwrite: Optional[bool] = False
+    create_embedding: Optional[bool] = True
+
+@router.post("/objects")
+def create_objects(payload: CreateObjects):
+    objects = {}
+    for rid, data in payload.rids.items():
+        print(rid, data)
+        graph.knowledge_object.create(rid)
+
+        cached_object = cache.read(rid)
+        if cached_object.data is None:
+            if data is not None:
+                cached_object = cache.write(rid, data)
+            
+            elif payload.use_dereference:
+                data = rid.dereference()
+                cached_object = cache.write(rid, data)
+        
+        elif payload.overwrite:
+            if data is not None:
+                cached_object = cache.write(rid, data)
+            
+            elif payload.use_dereference:
+                data = rid.dereference()
+                cached_object = cache.write(rid, data)
+        
+        objects[str(rid)] = cached_object.json()
+
+    if payload.create_embedding:
+        embeddable_rids = [
+            rid for rid in payload.rids.keys()
+            if rid.format == "message"
+        ]
+        vectorstore.embed_objects(embeddable_rids)
+
+    return objects
+
+
 class ReadObject(BaseModel):
     rid: RIDField
 
-@router.get("")
+@router.get("/object")
 def read_object(obj: ReadObject):
     cached_object = cache.read(obj.rid)
     return cached_object.json()
@@ -68,7 +108,7 @@ def read_object(obj: ReadObject):
 class DeleteObject(BaseModel):
     rid: RIDField
 
-@router.delete("")
+@router.delete("/object")
 def delete_object(obj: DeleteObject):
     success = graph.knowledge_object.delete(obj.rid)
 
@@ -82,15 +122,13 @@ class ReadObjectLink(BaseModel):
     rid: RIDField
     tag: str
 
-@router.get("/link")
+@router.get("/object/link")
 def read_object_link(obj: ReadObjectLink):
     target = graph.knowledge_object.read_link(obj.rid, obj.tag)
 
     if not target:
         raise ResourceNotFoundError(obj.rid, detail=f"{obj.rid} has no link with tag '{obj.tag}'")
     
-    print("yo")
-
     members = graph.set.read(target)
     
     return {
@@ -105,7 +143,7 @@ class MergeLinkedSet(BaseModel):
     tag: str
     members: List[str] 
 
-@router.post("/link")
+@router.post("/object/link")
 def merge_linked_set(obj: MergeLinkedSet):
     target = graph.knowledge_object.read_link(obj.rid, obj.tag)
     

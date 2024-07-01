@@ -7,7 +7,8 @@ from koi import llm
 
 
 router = APIRouter(
-    prefix="/llm"
+    prefix="/llm",
+    tags=["Conversation"]
 )
 
 class CreateConversation(BaseModel):

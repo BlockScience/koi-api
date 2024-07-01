@@ -11,7 +11,8 @@ from koi.validators import RIDField
 
 
 router = APIRouter(
-    prefix="/set"
+    prefix="/set",
+    tags=["Set"]
 )
 
     
