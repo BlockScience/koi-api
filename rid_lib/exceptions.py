@@ -1,5 +1,14 @@
-class InvalidFormatError(Exception):
+class RidException(Exception):
     pass
 
-class UndefinedMeansError(Exception):
+class InvalidRidFormatError(RidException):
     pass
+
+class InvalidReferenceFormatError(RidException):
+    pass
+
+class UndefinedMeansError(RidException):
+    pass
+
+class TypeImplementationError(RidException):
+    pass 

@@ -1,6 +1,7 @@
 from urllib.parse import urlparse
 
 from rid_lib.core import RID
+from rid_lib.exceptions import InvalidReferenceFormatError
 from ..base import SlackSpace
 
 
@@ -24,6 +25,8 @@ class SlackUser(SlackSpace):
         components = reference.split("/")
         if len(components) == 2:
             return cls(*components)
+        else:
+            raise InvalidReferenceFormatError(f"SlackUser RIDs must be in the following format: 'slack.user:<workspace_id>/<user_id>'")
         
     @classmethod
     def from_url(cls, slack_url):

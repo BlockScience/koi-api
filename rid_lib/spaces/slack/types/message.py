@@ -2,6 +2,7 @@ from typing import Optional
 from urllib.parse import urlparse, parse_qs
 
 from rid_lib.core import RID
+from rid_lib.exceptions import InvalidReferenceFormatError
 from ..base import SlackSpace
 
 
@@ -38,7 +39,7 @@ class SlackMessage(SlackSpace):
         if len(components) in (3, 4):
             return cls(*components)
         else:
-            raise 
+            raise InvalidReferenceFormatError("SlackMessage RIDs must be in one of the following formats: 'slack.message:<workspace_id>/<channel_id>/<message_id>', 'slack.message:<workspace_id>/<channel_id>/<message_id>/<thread_id>'")
         
     # need a better way of getting workspace_id from domain
     @classmethod
