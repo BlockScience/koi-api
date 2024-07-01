@@ -1,4 +1,4 @@
-from rid_lib.core import RID
+from rid_lib.core import RID, DereferencedData
 from rid_lib.exceptions import InvalidReferenceFormatError
 from ..base import SlackSpace
 
@@ -31,6 +31,12 @@ class SlackFile(SlackSpace):
         file_data = self.app.client.files_info(
             file=self.file_id
         )["file"]
-        return file_data
+
+        file_url = file_data["url_private"]
+        file_binary = self.authorized_request(file_url).content
+
+        return DereferencedData(
+            file_data, file_binary
+        )
 
 RID._add_type(SlackFile)

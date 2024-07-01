@@ -59,6 +59,9 @@ def hash_json(data: dict):
 def get_rid_file_path(rid: RID):
     return CACHE_DIRECTORY + "/" + encode_b64(str(rid)) + ".json"
 
+def get_rid_directory_path(rid: RID):
+    return CACHE_DIRECTORY + "/" + encode_b64(str(rid))
+
 def write(rid: RID, data: dict):
     if not os.path.exists("cache"):
         os.makedirs("cache")
@@ -90,3 +93,11 @@ def read(rid: RID):
 def delete(rid: RID):
     file_path = get_rid_file_path(rid)
     os.remove(file_path)
+
+def write_file(rid: RID, filename: str, data):
+    file_path = get_rid_directory_path(rid)
+    if not os.path.exists(file_path):
+        os.makedirs(file_path)
+
+    with open(f"{file_path}/{filename}", "wb") as f:
+        f.write(data)

@@ -90,3 +90,9 @@ class RID(ABC):
     @abstractmethod
     def dereference(self):
         ...
+
+
+class DereferencedData:
+    def __init__(self, json=None, bytes=None):
+        self.json = json
+        self.bytes = bytes

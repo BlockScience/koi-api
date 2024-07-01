@@ -1,3 +1,4 @@
+import requests
 import slack_bolt
 
 from rid_lib.core import RID
@@ -24,3 +25,10 @@ class SlackSpace(RID):
                 signing_secret=SLACK_SIGNING_SECRET
             )
 
+    def authorized_request(self, url, data=None, method="GET"):
+        headers = {
+            "Authorization": f"Bearer {SLACK_BOT_TOKEN}"
+        }
+
+        response = requests.request(method, url, data=data, headers=headers)
+        return response
