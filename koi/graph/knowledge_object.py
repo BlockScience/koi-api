@@ -18,7 +18,7 @@ def create(tx, rid: RID):
 @execute_read
 def read_link(tx, rid: RID, tag: str):
     READ_OBJECT_LINK = """
-        MATCH (object {rid: $rid})-[:LINK {tag: $tag}]->(target:set)
+        MATCH (object {rid: $rid})-[:LINK {tag: $tag}]->(target)
         RETURN target.rid AS target
         """
     

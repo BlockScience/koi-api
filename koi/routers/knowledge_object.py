@@ -129,13 +129,16 @@ def read_object_link(obj: ReadObjectLink):
     if not target:
         raise ResourceNotFoundError(obj.rid, detail=f"{obj.rid} has no link with tag '{obj.tag}'")
     
-    members = graph.set.read(target)
-    
-    return {
+    result = {
         "rid": str(obj.rid),
-        "target_rid": str(target),
-        "members": members
+        "target_rid": str(target)
     }
+    
+    if isinstance(target, InternalSet):
+        members = graph.set.read(target)
+        result["members"] = members
+    
+    return result
 
 
 class MergeLinkedSet(BaseModel):
