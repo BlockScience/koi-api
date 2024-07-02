@@ -1,2 +1,2 @@
-from .types.link import InternalLink
-from .types.set import InternalSet
+from .link import InternalLink
+from .set import InternalSet

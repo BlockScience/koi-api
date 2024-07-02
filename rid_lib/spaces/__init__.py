@@ -1,4 +1,5 @@
 from . import (
+    internal,
     slack,
-    internal
+    substack
 )

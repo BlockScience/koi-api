@@ -3,10 +3,10 @@ import hashlib
 from typing import Union
 
 from rid_lib.core import RID
-from ..base import InternalSpace
+from .base import InternalSpace
 
 class InternalLink(InternalSpace):
-    format="link"
+    format = "link"
 
     def __init__(self, source: Union[RID, str] = None, target: Union[RID, str] = None, tag: str = None, reference: str = None):
         super().__init__()
