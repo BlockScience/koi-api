@@ -6,7 +6,7 @@ from rid_lib.exceptions import InvalidReferenceFormatError
 from .base import SubstackSpace
 
 
-class SubspacePost(SubstackSpace):
+class SubstackPost(SubstackSpace):
     format = "post"
 
     def __init__(self, subdomain: str, slug: str):
@@ -21,7 +21,7 @@ class SubspacePost(SubstackSpace):
         if len(components) == 2:
             return cls(*components)
         else:
-            raise InvalidReferenceFormatError("SubspacePost RIDs must be in the following format: 'substack.post:<subdomain>/<slug>'")
+            raise InvalidReferenceFormatError("SubstackPost RIDs must be in the following format: 'substack.post:<subdomain>/<slug>'")
         
     def dereference(self):
         url = f"https://{self.subdomain}.substack.com/api/v1/posts/{self.slug}"
@@ -31,4 +31,4 @@ class SubspacePost(SubstackSpace):
 
         return post_data
         
-RID._add_type(SubspacePost)
+RID._add_type(SubstackPost)

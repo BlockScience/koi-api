@@ -1,2 +1,2 @@
-from .post import SubspacePost
-from .publication import SubspacePublication
+from .post import SubstackPost
+from .publication import SubstackPublication
