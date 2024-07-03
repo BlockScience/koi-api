@@ -1,6 +1,6 @@
 from urllib.parse import urlparse
 
-from rid_lib.core import RID
+from rid_lib.core import RID, DataObject
 from rid_lib.exceptions import InvalidReferenceFormatError
 from .base import SlackSpace
 
@@ -45,6 +45,8 @@ class SlackUser(SlackSpace):
         user_data = self.app.client.users_info(user=self.user_id)["user"]
 
         user_data["profile"] = profile_data
-        return user_data
+        return DataObject(
+            json_data=user_data
+        )
     
 RID._add_type(SlackUser)

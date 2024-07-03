@@ -1,4 +1,4 @@
-from rid_lib.core import RID
+from rid_lib.core import RID, DataObject
 from .base import InternalSpace
 
 class InternalSet(InternalSpace):
@@ -12,6 +12,6 @@ class InternalSet(InternalSpace):
         return cls(reference)
     
     def dereference(self):
-        return None
+        return DataObject()
     
 RID._add_type(InternalSet)

@@ -1,4 +1,4 @@
-from rid_lib.core import RID
+from rid_lib.core import RID, DataObject
 from .base import SubstackSpace
 
 
@@ -15,6 +15,6 @@ class SubstackPublication(SubstackSpace):
         return cls(reference)
     
     def dereference(self):
-        return None
+        return DataObject()
     
 RID._add_type(SubstackPublication)

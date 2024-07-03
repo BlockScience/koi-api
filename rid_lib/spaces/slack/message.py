@@ -1,7 +1,7 @@
 from typing import Optional
 from urllib.parse import urlparse, parse_qs
 
-from rid_lib.core import RID
+from rid_lib.core import RID, DataObject
 from rid_lib.exceptions import InvalidReferenceFormatError
 from .base import SlackSpace
 
@@ -78,6 +78,8 @@ class SlackMessage(SlackSpace):
             )
             message_data = response["messages"][0]
             
-        return message_data
+        return DataObject(
+            json_data=message_data
+        )
 
 RID._add_type(SlackMessage)

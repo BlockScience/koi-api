@@ -1,6 +1,6 @@
 from urllib.parse import urlparse
 
-from rid_lib.core import RID
+from rid_lib.core import RID, DataObject
 from rid_lib.exceptions import InvalidReferenceFormatError
 from .base import SlackSpace
 
@@ -41,6 +41,8 @@ class SlackChannel(SlackSpace):
         
     def dereference(self):
         channel_data = self.app.client.conversations_info(channel=self.channel_id)["channel"]
-        return channel_data
+        return DataObject(
+            json_data=channel_data
+        )
 
 RID._add_type(SlackChannel)
