@@ -1,5 +1,6 @@
 import voyageai
 from pinecone import Pinecone, ServerlessSpec
+from rid_lib import RID
 
 from .config import (
     VOYAGEAI_API_KEY, 
@@ -9,7 +10,7 @@ from .config import (
     VOYAGEAI_MODEL, 
     VOYAGEAI_BATCH_SIZE
 )
-from . import cache
+from . import cache, graph
 
 
 pc = Pinecone(api_key=PINECONE_API_KEY)
@@ -56,7 +57,8 @@ def embed_objects(rids):
             "sha256_hash": cached_object.metadata.get("sha256_hash"),
             "character_length": len(text),
             "space": rid.space,
-            "format": rid.format
+            "format": rid.format,
+            "text": text
         })
 
     embeddings = []
@@ -81,7 +83,6 @@ def embed_objects(rids):
 
     print(index.describe_index_stats())
 
-
 def query(text):
     query_embedding = vc.embed(
         texts=[text],
@@ -94,8 +95,26 @@ def query(text):
         filter={
             "character_length": {"$gt": 100}
         },
-        top_k=5, 
+        top_k=20, 
         include_metadata=True
     )
 
     return [(m["id"], m["score"]) for m in result["matches"]]
+
+def read(rid):
+    return index.fetch([str(rid)])
+
+def delete(rid):
+    index.delete([str(rid)])
+
+def scrub():
+    rids = []
+    for ids in index.list():
+        rids.extend([RID.from_string(id) for id in ids])
+
+    to_delete = []
+    for rid in rids:
+        if not cache.read(rid).data:
+            to_delete.append(str(rid))
+    
+    index.delete(to_delete)

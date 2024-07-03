@@ -44,7 +44,7 @@ def create_object(obj: CreateObject):
             data = obj.rid.dereference()
             cached_object = cache.write(obj.rid, data)
 
-    if obj.create_embedding and (obj.rid.format == "message"):
+    if obj.create_embedding and (cached_object.data is not None) and ("text" in cached_object.data):
         vectorstore.embed_objects([obj.rid])
     
     return cached_object.json()

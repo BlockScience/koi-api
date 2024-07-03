@@ -66,7 +66,7 @@ def continue_conversation(conversation_id, query):
 
     footnote_table = ""
     for n, rid in enumerate(rids):
-        line = f"{n+1}: <{rid.url}|{rid}>"
+        line = f"{n+1}: <{rid}>"
         if f"[{n+1}]" not in bot_message:
             line = f"~{line}~"
         footnote_table += line + "\n"
