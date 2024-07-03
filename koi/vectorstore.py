@@ -1,3 +1,5 @@
+from typing import List
+
 import voyageai
 from pinecone import Pinecone, ServerlessSpec
 from rid_lib import RID
@@ -10,7 +12,7 @@ from .config import (
     VOYAGEAI_MODEL, 
     VOYAGEAI_BATCH_SIZE
 )
-from . import cache, graph
+from .rid_extensions import ExtendedRID
 
 
 pc = Pinecone(api_key=PINECONE_API_KEY)
@@ -29,18 +31,18 @@ if PINECONE_INDEX_NAME not in pc.list_indexes().names():
 
 index = pc.Index(PINECONE_INDEX_NAME)
 
-def embed_objects(rids):
+def embed_objects(rids: List[ExtendedRID]):
     ids = [str(rid) for rid in rids]
     texts = []
     meta = []
     
     for rid in rids:
-        cached_object = cache.read(rid)
+        cached_object = rid.cache.read()
 
-        if cached_object.data is None:
+        if cached_object.json_data is None:
             continue
 
-        text = cached_object.data.get("text")
+        text = cached_object.json_data.get("text")
 
         if not text:
             continue
@@ -110,11 +112,11 @@ def delete(rid):
 def scrub():
     rids = []
     for ids in index.list():
-        rids.extend([RID.from_string(id) for id in ids])
+        rids.extend([ExtendedRID(RID.from_string(id)) for id in ids])
 
     to_delete = []
     for rid in rids:
-        if not cache.read(rid).data:
+        if not rid.cache.read().json_data:
             to_delete.append(str(rid))
     
     index.delete(to_delete)

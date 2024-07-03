@@ -8,6 +8,7 @@ from rid_lib.spaces.internal import InternalLink, InternalSet
 from koi import graph, cache, vectorstore
 from koi.exceptions import ResourceNotFoundError
 from koi.validators import RIDField
+from koi.rid_extensions import ExtendedRID
 
 
 router = APIRouter(tags=["Knowledge Object"])
@@ -20,32 +21,40 @@ class CreateObject(BaseModel):
     create_embedding: Optional[bool] = True
 
 @router.post("/object")
-def create_object(obj: CreateObject):
-    graph.knowledge_object.create(obj.rid)
+def create_object_endpoint(obj: CreateObject):
+    create_object(**obj.model_dump())
 
-    cached_object = cache.read(obj.rid)
-    if cached_object.data is None:
-        if obj.data is not None:
-            print("writing cache with provided data")
-            cached_object = cache.write(obj.rid, obj.data)
+def create_object(
+    rid: ExtendedRID,
+    data: Optional[dict] = None, 
+    use_dereference: Optional[bool] = True, 
+    overwrite: Optional[bool] = False, 
+    create_embedding: Optional[bool] = True
+):
 
-        elif obj.use_dereference:
-            print("writing cache with dereferenced data")
-            data = obj.rid.dereference()
-            cached_object = cache.write(obj.rid, data)            
+    graph.knowledge_object.create(rid)
     
-    elif obj.overwrite:
-        if obj.data is not None:
+    cached_object = rid.cache.read()
+    if cached_object.json_data is None:
+        if data is not None:
+            print("writing cache with provided data")
+            cached_object = rid.cache.write(data)
+
+        elif use_dereference:
+            print("writing cache with dereferenced data")
+            cached_object = rid.cache.write(from_dereference=True)
+            
+    elif overwrite:
+        if data is not None:
             print("overwriting cache with provided data")
-            cached_object = cache.write(obj.rid, obj.data)
+            cached_object = rid.cache.write(data)
 
-        elif obj.use_dereference:
+        elif use_dereference:
             print("overwriting cache with dereferenced data")
-            data = obj.rid.dereference()
-            cached_object = cache.write(obj.rid, data)
+            cached_object = rid.cache.write(from_dereference=True)
 
-    if obj.create_embedding and (cached_object.data is not None) and ("text" in cached_object.data):
-        vectorstore.embed_objects([obj.rid])
+    if create_embedding and (cached_object.json_data is not None) and ("text" in cached_object.json_data):
+        vectorstore.embed_objects([rid])
     
     return cached_object.json()
 
@@ -57,30 +66,10 @@ class CreateObjects(BaseModel):
     create_embedding: Optional[bool] = True
 
 @router.post("/objects")
-def create_objects(payload: CreateObjects):
+def create_objects_endpoint(payload: CreateObjects):
     objects = {}
     for rid, data in payload.rids.items():
-        print(rid, data)
-        graph.knowledge_object.create(rid)
-
-        cached_object = cache.read(rid)
-        if cached_object.data is None:
-            if data is not None:
-                cached_object = cache.write(rid, data)
-            
-            elif payload.use_dereference:
-                data = rid.dereference()
-                cached_object = cache.write(rid, data)
-        
-        elif payload.overwrite:
-            if data is not None:
-                cached_object = cache.write(rid, data)
-            
-            elif payload.use_dereference:
-                data = rid.dereference()
-                cached_object = cache.write(rid, data)
-        
-        objects[str(rid)] = cached_object.json()
+        objects[str(rid)] = create_object(rid, data, payload.use_dereference, payload.overwrite, False)        
 
     if payload.create_embedding:
         embeddable_rids = [
