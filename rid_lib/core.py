@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Optional, Dict, Union, List
 
 from .exceptions import *
 
@@ -90,3 +91,47 @@ class RID(ABC):
     @abstractmethod
     def dereference(self):
         ...
+
+
+class RIDWrapper:
+    def __init__(self, rid: RID):
+        self._rid = rid
+
+    def __getattr__(self, name: str):
+        return getattr(self._rid, name)
+
+    def __str__(self):
+        return str(self._rid)
+    
+    def __repr__(self):
+        return f"<WrappedRID {self._rid.__class__.__name__} object '{str(self)}'>"
+    
+    def __eq__(self, other):
+        if isinstance(other, RIDWrapper):
+            return self._rid == other._rid
+        return self._rid == other
+    
+    def __hash__(self):
+        return hash(self._rid)
+
+
+class DataObject:
+    def __init__(
+            self, 
+            json_data: Optional[dict] = None, 
+            files: Optional[List[Dict[str, Union[bytes, str]]]] = None
+        ):
+        
+        self.json_data = json_data
+        self.files = files
+
+    @property
+    def empty(self):
+        return self.json_data is None and not self.files
+    
+    @property
+    def merged_json(self):
+        return {
+            "json_data": self.json_data,
+            "files": self.files
+        }

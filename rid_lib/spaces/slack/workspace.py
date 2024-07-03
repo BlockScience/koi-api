@@ -1,4 +1,4 @@
-from rid_lib.core import RID
+from rid_lib.core import RID, DataObject
 from .base import SlackSpace
 
 class SlackWorkspace(SlackSpace):
@@ -16,6 +16,8 @@ class SlackWorkspace(SlackSpace):
     
     def dereference(self):
         workspace_data = self.app.client.team_info(team=self.workspace_id)["team"]
-        return workspace_data
+        return DataObject(
+            json_data=workspace_data
+        )
     
 RID._add_type(SlackWorkspace)

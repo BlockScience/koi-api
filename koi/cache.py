@@ -1,19 +1,30 @@
-from typing import Optional
+from typing import Optional, Dict, Union
 import json
-import hashlib
 import os
-from base64 import urlsafe_b64encode, urlsafe_b64decode
+import time
 
-from rid_lib import RID
+from rid_lib.core import RID, DataObject
 
-from koi.config import CACHE_DIRECTORY
+from .config import CACHE_DIRECTORY
+from . import utils
 
 
-class CacheableObject:
-    def __init__(self, rid: RID, data: Optional[dict] = None, metadata: Optional[dict] = None):
-        self.rid = rid
-        self.data = data
+if not os.path.exists(CACHE_DIRECTORY):
+    os.makedirs(CACHE_DIRECTORY)
+
+class CacheEntry:
+    def __init__(
+            self, 
+            metadata: dict,
+            json_data: Optional[dict] = None
+        ):
+        
         self.metadata = metadata
+        self.json_data = json_data
+        self.files = []
+
+        for file in self.metadata.get("files", []):
+            self.files.append(file)
 
     @classmethod
     def from_json(cls, json_object):
@@ -21,72 +32,80 @@ class CacheableObject:
             raise Exception("Invalid JSON body read from cached file")
 
         return cls(
-            RID.from_string(json_object.get("rid")),
-            json_object.get("data"),
-            json_object.get("metadata")
+            json_object.get("metadata"),
+            json_object.get("data")
         )
 
     def json(self):
         return {
-            "rid": str(self.rid),
-            "data": self.data,
-            "metadata": self.metadata
+            "metadata": self.metadata,
+            "data": self.json_data,
         }
 
-def encode_b64(string: str):
-    encoded_bytes = urlsafe_b64encode(string.encode())
-    encoded_string = encoded_bytes.decode()
-    # removing base 64 padding
-    cleaned_string = encoded_string.rstrip("=")
-    return cleaned_string
+class CacheableObject:
+    def __init__(self, rid: RID):
+        self.rid = rid
+        self.encoded_rid = utils.encode_b64(str(rid))
 
-def decode_b64(string: str):
-    # adding padding back in
-    padded_string = string + "=" * (-len(string) % 4)
-    decoded_bytes = urlsafe_b64decode(padded_string.encode())
-    decoded_string = decoded_bytes.decode()
-    return decoded_string
+    @property
+    def file_path(self):
+        return f"{CACHE_DIRECTORY}/{self.encoded_rid}.json"
 
-def hash_json(data: dict):
-    # converting dict to string in a repeatable way
-    json_string = json.dumps(data, sort_keys=True)
-    json_bytes = json_string.encode()
+    @property
+    def directory_path(self):
+        return f"{CACHE_DIRECTORY}/{self.encoded_rid}"
 
-    hash = hashlib.sha256()
-    hash.update(json_bytes)
-    return hash.hexdigest()
+    def write(self, data_object: Optional[DataObject] = None, from_dereference: bool = False):
+        if (data_object is not None and from_dereference is True) or \
+            (data_object is None and from_dereference is False):
 
-def get_rid_file_path(rid: RID):
-    return CACHE_DIRECTORY + "/" + encode_b64(str(rid)) + ".json"
+            raise Exception("Call to cache write must pass in DataObject OR set by_dereference = True")
 
-def write(rid: RID, data: dict):
-    if not os.path.exists("cache"):
-        os.makedirs("cache")
+        if from_dereference:
+            data_object = self.rid.dereference()
+        
+        if data_object.empty:
+            return
 
-    # caches both json data and hash of data
-    metadata = {
-        "sha256_hash": hash_json(data)
-    }
+        if data_object.files:
+            if not os.path.exists(self.directory_path):
+                os.makedirs(self.directory_path)
+            
+            for file_name, binary_data in data_object.files.items():
+                with open(f"{self.directory_path}/{file_name}", "wb") as f:
+                    if type(binary_data) is bytes:
+                        f.write(binary_data)
+                    elif type(binary_data) is str:
+                        f.write(binary_data.encode())
 
-    cached_object = CacheableObject(rid, data, metadata)
+        metadata = {
+            "rid": str(self.rid),
+            "timestamp": time.time(),
+            # not currently hashing file data
+            "sha256_hash": utils.hash_json(data_object.json_data),
+            "files": list(data_object.files.keys()) if data_object.files else []
+        }
 
-    file_path = get_rid_file_path(rid)
+        cache_entry = CacheEntry(metadata, data_object.json_data)
 
-    with open(file_path, "w") as f:
-        json.dump(cached_object.json(), f, indent=2)
+        with open(self.file_path, "w") as f:
+            json.dump(cache_entry.json(), f, indent=2)
 
-    return cached_object
+        return cache_entry
 
-def read(rid: RID):
-    file_path = get_rid_file_path(rid)
+    def read(self):
+        try:
+            with open(self.file_path, "r") as f:
+                return CacheEntry.from_json(json.load(f))
+        except FileNotFoundError:
+            return None
+        
+    def read_file(self, file_name):
+        try:
+            with open(f"{self.directory_path}/{file_name}", "rb") as f:
+                return f.read()
+        except FileNotFoundError:
+            return None
 
-    try:
-        with open(file_path, "r") as f:
-            json_object = json.load(f)
-            return CacheableObject.from_json(json_object)
-    except FileNotFoundError:
-        return CacheableObject(rid)
-
-def delete(rid: RID):
-    file_path = get_rid_file_path(rid)
-    os.remove(file_path)
+    def delete(self):
+        os.remove(self.file_path)

@@ -1,9 +1,9 @@
 from rid_lib import RID
 
-from .utils import execute_read, execute_write
+from . import driver
 
 
-@execute_write
+@driver.execute_write
 def create(tx, rid: RID, members):
     CREATE_SET = """
         MERGE (s:set {rid: $rid})
@@ -19,7 +19,7 @@ def create(tx, rid: RID, members):
 
     return members
 
-@execute_read
+@driver.execute_read
 def read(tx, rid: RID):
     READ_SET = """
         MATCH (s:set {rid: $rid})
@@ -31,7 +31,7 @@ def read(tx, rid: RID):
     if record:
         return record["members"]
 
-@execute_write
+@driver.execute_write
 def update(tx, rid: RID, add_members=[], remove_members=[]):
     added_members = []
     removed_members = []
@@ -71,7 +71,7 @@ def update(tx, rid: RID, add_members=[], remove_members=[]):
 
     return added_members, removed_members
 
-@execute_write
+@driver.execute_write
 def delete(tx, rid: RID):
     DELETE_SET = """
         MATCH (s:set {rid: $rid})

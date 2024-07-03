@@ -1,8 +1,8 @@
-from rid_lib.core import RID
+from rid_lib.core import RID, DataObject
 from .base import SubstackSpace
 
 
-class SubspacePublication(SubstackSpace):
+class SubstackPublication(SubstackSpace):
     format = "publication"
 
     def __init__(self, subdomain: str):
@@ -15,6 +15,6 @@ class SubspacePublication(SubstackSpace):
         return cls(reference)
     
     def dereference(self):
-        return None
+        return DataObject()
     
-RID._add_type(SubspacePublication)
+RID._add_type(SubstackPublication)
