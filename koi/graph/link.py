@@ -1,9 +1,9 @@
 from rid_lib import RID
 
-from .utils import execute_read, execute_write
+from . import driver
 
 
-@execute_write
+@driver.execute_write
 def create(tx, rid: RID, source, target, tag):
     CREATE_LINK = """
         MATCH (source {rid: $source_rid})
@@ -21,7 +21,7 @@ def create(tx, rid: RID, source, target, tag):
     record = tx.run(CREATE_LINK, rid=str(rid), params=params, source_rid=str(source), target_rid=str(target)).single()
     return record is not None
     
-@execute_read
+@driver.execute_read
 def read(tx, rid: RID):
     READ_LINK = """
         MATCH (source)-[link:LINK {rid: $rid}]->(target)
@@ -33,7 +33,7 @@ def read(tx, rid: RID):
     if record:
         return record["source.rid"], record["target.rid"]
 
-@execute_write
+@driver.execute_write
 def delete(tx, rid: RID):
     DELETE_LINK = """
         MATCH ()-[link:LINK {rid: $rid}]->()
