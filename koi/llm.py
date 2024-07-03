@@ -5,7 +5,8 @@ import nanoid
 from rid_lib import RID
 
 from .config import OPENAI_API_KEY
-from . import vectorstore, cache
+from . import vectorstore
+from .rid_extensions import ExtendedRID
 
 
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -33,12 +34,12 @@ def continue_conversation(conversation_id, query):
     conversation = conversations.get(conversation_id)
 
     knowledge = ""
-    rids = [RID.from_string(rid) for rid, score in vectorstore.query(query)]
+    rids = [ExtendedRID(RID.from_string(rid)) for rid, score in vectorstore.query(query)]
     print(rids)
     for n, rid in enumerate(rids):
-        cached_object = cache.read(rid)
+        cached_object = rid.cache.read()
         if cached_object.data is None:
-            cached_object = cache.write(rid, rid.dereference())
+            cached_object = rid.cache.write(from_dereference=True)
         
         text = cached_object.data["text"]
         knowledge += f"Knowledge Object [{n+1}] {str(rid)}\n{text}\n\n"
