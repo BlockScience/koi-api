@@ -1,5 +1,5 @@
 from rid_lib.core import RID
-from ..base import InternalSpace
+from .base import InternalSpace
 
 class InternalSet(InternalSpace):
     format = "set"

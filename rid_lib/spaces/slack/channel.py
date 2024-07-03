@@ -2,11 +2,11 @@ from urllib.parse import urlparse
 
 from rid_lib.core import RID
 from rid_lib.exceptions import InvalidReferenceFormatError
-from ..base import SlackSpace
+from .base import SlackSpace
 
 
 class SlackChannel(SlackSpace):
-    format="channel"
+    format = "channel"
 
     @property
     def url(self):

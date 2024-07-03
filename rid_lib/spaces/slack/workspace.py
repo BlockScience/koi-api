@@ -1,8 +1,8 @@
 from rid_lib.core import RID
-from ..base import SlackSpace
+from .base import SlackSpace
 
 class SlackWorkspace(SlackSpace):
-    format="workspace"
+    format = "workspace"
 
     def __init__(self, workspace_id: str):
         super().__init__()

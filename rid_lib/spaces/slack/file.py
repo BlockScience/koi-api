@@ -1,6 +1,6 @@
 from rid_lib.core import RID, DereferencedData
 from rid_lib.exceptions import InvalidReferenceFormatError
-from ..base import SlackSpace
+from .base import SlackSpace
 
 
 class SlackFile(SlackSpace):
