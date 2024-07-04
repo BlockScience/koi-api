@@ -19,6 +19,8 @@ class SlackSpace(RID):
     default_domain = "metagov"
 
     def __init__(self):
+        super().__init__()
+
         if not SlackSpace.app:
             SlackSpace.app = slack_bolt.App(
                 token=SLACK_BOT_TOKEN,

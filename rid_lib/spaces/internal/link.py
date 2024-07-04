@@ -9,7 +9,6 @@ class InternalLink(InternalSpace):
     format = "link"
 
     def __init__(self, source: Union[RID, str] = None, target: Union[RID, str] = None, tag: str = None, reference: str = None):
-        super().__init__()
 
         if reference is not None:
             self.reference = reference

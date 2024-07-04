@@ -1,10 +1,16 @@
-from abc import ABC, abstractmethod
-from typing import Optional, Dict, Union, List
+from abc import ABCMeta, abstractmethod
+from typing import Any, Optional, Dict, Union, List
 
 from .exceptions import *
 
 
-class RID(ABC):
+class PostInitCaller(ABCMeta):
+    def __call__(cls, *args, **kwargs):
+        obj = type.__call__(cls, *args, **kwargs)
+        obj.__post_init__()
+        return obj
+    
+class RID(metaclass=PostInitCaller):
     space: str = None
     format: str = None
 
@@ -12,6 +18,10 @@ class RID(ABC):
 
     means_delimiter = "."
     rid_delimiter = ":"
+
+    # optional function can be overridden by monkey patching to add extended RID functionality
+    def __post_init__(self):
+        pass
     
     def __str__(self):
         return self.means + RID.rid_delimiter + self.reference
@@ -91,28 +101,6 @@ class RID(ABC):
     @abstractmethod
     def dereference(self):
         ...
-
-
-class RIDWrapper:
-    def __init__(self, rid: RID):
-        self._rid = rid
-
-    def __getattr__(self, name: str):
-        return getattr(self._rid, name)
-
-    def __str__(self):
-        return str(self._rid)
-    
-    def __repr__(self):
-        return f"<WrappedRID {self._rid.__class__.__name__} object '{str(self)}'>"
-    
-    def __eq__(self, other):
-        if isinstance(other, RIDWrapper):
-            return self._rid == other._rid
-        return self._rid == other
-    
-    def __hash__(self):
-        return hash(self._rid)
 
 
 class DataObject:
