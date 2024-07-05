@@ -1,8 +1,19 @@
-from rid_lib.core import RID, RIDWrapper
+from rid_lib.core import RID
+from rid_lib.types import InternalLink, InternalSet
 from .cache import CacheableObject
+from .graph import GraphKnowledgeObject, GraphSetObject, GraphLinkObject
 
-class ExtendedRID(RIDWrapper):
-    def __init__(self, rid: RID):
-        super().__init__(rid)
-        
-        self.cache = CacheableObject(self)
+def extended_rid_post_init(self):
+    print("patched init function")
+    print(self.__class__.__name__)
+    self.cache = CacheableObject(self)
+
+    if isinstance(self, InternalSet):
+        self.graph = GraphSetObject(self)
+    elif isinstance(self, InternalLink):
+        self.graph = GraphLinkObject(self)
+    else:
+        self.graph = GraphKnowledgeObject(self)
+
+def patch_rid():
+    RID.__post_init__ = extended_rid_post_init

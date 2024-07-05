@@ -3,12 +3,12 @@ from typing import Optional, Union, List, Dict
 from fastapi import APIRouter
 from pydantic import BaseModel
 import nanoid
+from rid_lib.core import RID, DataObject
 from rid_lib.spaces.internal import InternalLink, InternalSet
 
 from koi import graph, cache, vectorstore
 from koi.exceptions import ResourceNotFoundError
 from koi.validators import RIDField
-from koi.rid_extensions import ExtendedRID
 
 
 router = APIRouter(tags=["Knowledge Object"])
@@ -25,29 +25,29 @@ def create_object_endpoint(obj: CreateObject):
     create_object(**obj.model_dump())
 
 def create_object(
-    rid: ExtendedRID,
+    rid: RID,
     data: Optional[dict] = None, 
     use_dereference: Optional[bool] = True, 
     overwrite: Optional[bool] = False, 
     create_embedding: Optional[bool] = True
 ):
-
+    data_object = DataObject(json_data=data)
     graph.knowledge_object.create(rid)
     
     cached_object = rid.cache.read()
-    if cached_object.json_data is None:
-        if data is not None:
+    if cached_object is None:
+        if not data_object.empty:
             print("writing cache with provided data")
-            cached_object = rid.cache.write(data)
+            cached_object = rid.cache.write(data_object)
 
         elif use_dereference:
             print("writing cache with dereferenced data")
             cached_object = rid.cache.write(from_dereference=True)
             
     elif overwrite:
-        if data is not None:
+        if not data_object.empty:
             print("overwriting cache with provided data")
-            cached_object = rid.cache.write(data)
+            cached_object = rid.cache.write(data_object)
 
         elif use_dereference:
             print("overwriting cache with dereferenced data")
@@ -86,9 +86,7 @@ class ReadObject(BaseModel):
 
 @router.get("/object")
 def read_object(obj: ReadObject):
-    cached_object = cache.read(obj.rid)
-    return cached_object.json()
-
+    return obj.rid.cache.read().json_data
 
 # @router.get("/{encoded_id:path}")
 # def read_object_path(encoded_id: str):

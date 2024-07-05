@@ -12,7 +12,6 @@ from .config import (
     VOYAGEAI_MODEL, 
     VOYAGEAI_BATCH_SIZE
 )
-from .rid_extensions import ExtendedRID
 
 
 pc = Pinecone(api_key=PINECONE_API_KEY)
@@ -31,7 +30,7 @@ if PINECONE_INDEX_NAME not in pc.list_indexes().names():
 
 index = pc.Index(PINECONE_INDEX_NAME)
 
-def embed_objects(rids: List[ExtendedRID]):
+def embed_objects(rids: List[RID]):
     ids = [str(rid) for rid in rids]
     texts = []
     meta = []
@@ -112,7 +111,7 @@ def delete(rid):
 def scrub():
     rids = []
     for ids in index.list():
-        rids.extend([ExtendedRID(RID.from_string(id)) for id in ids])
+        rids.extend([RID.from_string(id) for id in ids])
 
     to_delete = []
     for rid in rids:

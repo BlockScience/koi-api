@@ -6,7 +6,6 @@ from rid_lib import RID
 
 from .config import OPENAI_API_KEY
 from . import vectorstore
-from .rid_extensions import ExtendedRID
 
 
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -34,7 +33,7 @@ def continue_conversation(conversation_id, query):
     conversation = conversations.get(conversation_id)
 
     knowledge = ""
-    rids = [ExtendedRID(RID.from_string(rid)) for rid, score in vectorstore.query(query)]
+    rids = [RID.from_string(rid) for rid, score in vectorstore.query(query)]
     print(rids)
     for n, rid in enumerate(rids):
         cached_object = rid.cache.read()
