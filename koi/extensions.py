@@ -1,11 +1,11 @@
 from rid_lib.core import RID
 from rid_lib.types import InternalLink, InternalSet
+
 from .cache import CacheableObject
 from .graph import GraphKnowledgeObject, GraphSetObject, GraphLinkObject
 
+
 def extended_rid_post_init(self):
-    print("patched init function")
-    print(self.__class__.__name__)
     self.cache = CacheableObject(self)
 
     if isinstance(self, InternalSet):

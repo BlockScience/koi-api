@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Union
+from typing import Optional
 import json
 import os
 import time
@@ -15,7 +15,7 @@ if not os.path.exists(CACHE_DIRECTORY):
 class CacheEntry:
     def __init__(
             self, 
-            metadata: dict,
+            metadata: Optional[dict] = None,
             json_data: Optional[dict] = None
         ):
         
@@ -23,8 +23,13 @@ class CacheEntry:
         self.json_data = json_data
         self.files = []
 
-        for file in self.metadata.get("files", []):
-            self.files.append(file)
+        if self.metadata:
+            for file in self.metadata.get("files", []):
+                self.files.append(file)
+    
+    @property
+    def empty(self):
+        return self.metadata is None and self.json_data is None
 
     @classmethod
     def from_json(cls, json_object):
@@ -63,6 +68,9 @@ class CacheableObject:
 
         if from_dereference:
             data_object = self.rid.dereference()
+
+        if not data_object:
+            return
         
         if data_object.empty:
             return
@@ -98,7 +106,7 @@ class CacheableObject:
             with open(self.file_path, "r") as f:
                 return CacheEntry.from_json(json.load(f))
         except FileNotFoundError:
-            return None
+            return CacheEntry()
         
     def read_file(self, file_name):
         try:

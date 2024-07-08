@@ -6,9 +6,9 @@ from koi.routers import (
     link,
     set
 )
-from koi import rid_extensions
+from koi import extensions
 
-rid_extensions.patch_rid()
+extensions.patch_rid()
 
 app = FastAPI()
 app.include_router(knowledge_object.router)

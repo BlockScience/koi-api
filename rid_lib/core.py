@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Any, Optional, Dict, Union, List
+from typing import Optional, Dict, Union, List
 
 from .exceptions import *
 
@@ -11,8 +11,9 @@ class PostInitCaller(ABCMeta):
         return obj
     
 class RID(metaclass=PostInitCaller):
-    space: str = None
-    format: str = None
+    space: str
+    format: str
+    reference: str
 
     table = {}
 

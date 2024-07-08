@@ -2,7 +2,7 @@ import json
 
 from openai import OpenAI
 import nanoid
-from rid_lib import RID
+from rid_lib.core import RID
 
 from .config import OPENAI_API_KEY
 from . import vectorstore

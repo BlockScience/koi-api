@@ -2,7 +2,7 @@ from typing import List
 
 import voyageai
 from pinecone import Pinecone, ServerlessSpec
-from rid_lib import RID
+from rid_lib.core import RID
 
 from .config import (
     VOYAGEAI_API_KEY, 
@@ -46,7 +46,7 @@ def embed_objects(rids: List[RID]):
         if not text:
             continue
         
-        prefix_embedding = cached_object.data.get("prefix_embedding", None)
+        prefix_embedding = cached_object.json_data.get("prefix_embedding", None)
         if prefix_embedding:
             text = prefix_embedding + text
 
