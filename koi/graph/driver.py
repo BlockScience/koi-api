@@ -21,13 +21,20 @@ except exceptions.ServiceUnavailable:
 def execute_read(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
+        # neo4j execute passes tx first, this rearranges params so self is passed first following class function convention
+        def tx_handler_func(tx, *args, **kwargs):
+            return func(args[0], tx, *args[1:], **kwargs)
+        
         with neo4j_driver.session(database=NEO4J_DB) as session:
-            return session.execute_read(func, *args, **kwargs)
+            return session.execute_read(tx_handler_func, *args, **kwargs)
     return wrapper
 
 def execute_write(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
+        def tx_handler_func(tx, *args, **kwargs):
+            return func(args[0], tx, *args[1:], **kwargs)
+        
         with neo4j_driver.session(database=NEO4J_DB) as session:
-            return session.execute_write(func, *args, **kwargs)
+            return session.execute_write(tx_handler_func, *args, **kwargs)
     return wrapper

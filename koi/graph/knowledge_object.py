@@ -1,15 +1,21 @@
-from rid_lib import RID
+from rid_lib.core import RID
+from neo4j import ManagedTransaction
 
 from . import driver
-from .base import GraphObject
 
 
-class GraphKnowledgeObject(GraphObject):
+class GraphKnowledgeObject:
+    def __init__(self, rid: RID):
+        self.rid = rid
+    
     @driver.execute_write
-    def create(tx, self):
+    def create(self, tx: ManagedTransaction):
+        print("in function")
+        print(self, tx)
+
         labels = f"{self.rid.space}:{self.rid.format}"
 
-        CREATE_OBJECT = f"""
+        CREATE_OBJECT = f"""//cypher
             MERGE (object:{labels} {{rid: $rid}})
             SET object += $params
             RETURN object
@@ -18,8 +24,8 @@ class GraphKnowledgeObject(GraphObject):
         tx.run(CREATE_OBJECT, rid=str(self.rid), params=self.rid.params)
 
     @driver.execute_read
-    def read_link(tx, self, tag: str):
-        READ_OBJECT_LINK = """
+    def read_link(self, tx: ManagedTransaction, tag: str):
+        READ_OBJECT_LINK = """//cypher
             MATCH (object {rid: $rid})-[:LINK {tag: $tag}]->(target)
             RETURN target.rid AS target
             """
@@ -31,8 +37,8 @@ class GraphKnowledgeObject(GraphObject):
             return RID.from_string(target_rid)
         
     @driver.execute_write
-    def delete(tx, self):
-        DELETE_OBJECT = """
+    def delete(self, tx: ManagedTransaction):
+        DELETE_OBJECT = """//cypher
             MATCH (object {rid: $rid})
             DETACH DELETE object
             RETURN object

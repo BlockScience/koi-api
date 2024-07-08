@@ -1,13 +1,12 @@
-from rid_lib import RID
-from rid_lib.types import InternalLink
+from neo4j import ManagedTransaction
 
 from . import driver
-from .base import GraphObject
+from .knowledge_object import GraphKnowledgeObject
 
-class GraphLinkObject(GraphObject):
+class GraphLinkObject(GraphKnowledgeObject):
     @driver.execute_write
-    def create(tx, self, source, target, tag):
-        CREATE_LINK = """
+    def create(self, tx: ManagedTransaction, source, target, tag):
+        CREATE_LINK = """//cypher
             MATCH (source {rid: $source_rid})
             MATCH (target {rid: $target_rid})
             MERGE (source)-[link:LINK {rid: $rid}]->(target)
@@ -24,8 +23,8 @@ class GraphLinkObject(GraphObject):
         return record is not None
         
     @driver.execute_read
-    def read(tx, self):
-        READ_LINK = """
+    def read(self, tx: ManagedTransaction):
+        READ_LINK = """//cypher
             MATCH (source)-[link:LINK {rid: $rid}]->(target)
             RETURN source.rid, target.rid
             """
@@ -36,8 +35,8 @@ class GraphLinkObject(GraphObject):
             return record["source.rid"], record["target.rid"]
 
     @driver.execute_write
-    def delete(tx, self):
-        DELETE_LINK = """
+    def delete(self, tx: ManagedTransaction):
+        DELETE_LINK = """//cypher
             MATCH ()-[link:LINK {rid: $rid}]->()
             DELETE link
             RETURN link
