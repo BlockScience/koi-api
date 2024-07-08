@@ -37,10 +37,10 @@ def continue_conversation(conversation_id, query):
     print(rids)
     for n, rid in enumerate(rids):
         cached_object = rid.cache.read()
-        if cached_object.data is None:
+        if cached_object.json_data is None:
             cached_object = rid.cache.write(from_dereference=True)
         
-        text = cached_object.data["text"]
+        text = cached_object.json_data["text"]
         knowledge += f"Knowledge Object [{n+1}] {str(rid)}\n{text}\n\n"
 
 

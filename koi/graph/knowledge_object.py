@@ -23,7 +23,7 @@ class GraphKnowledgeObject:
 
         return execute_create()
 
-    def read_link(self, tag: str):
+    def read_link(self, tag: str) -> RID | None:
         @driver.execute_read
         def execute_read_link(tx: ManagedTransaction, tag: str):
             READ_OBJECT_LINK = """//cypher

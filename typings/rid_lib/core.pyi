@@ -1,4 +1,4 @@
-from typing import Union, Optional, Dict, List
+from typing import Union, Optional
 
 from rid_lib.types import (
     InternalLink,
@@ -42,9 +42,9 @@ class RID:
 
 
 class DataObject:
-    def __init__(self, json_data: Optional[dict] = None, files: Optional[List[Dict[str, bytes | str]]] = None) -> None:
+    def __init__(self, json_data: Optional[dict] = None, files: Optional[dict[str, bytes | str]] = None) -> None:
         self.json_data: Optional[dict]
-        self.files: Optional[List[Dict[str, bytes | str]]]
+        self.files: Optional[dict[str, bytes | str]]
 
     @property
     def empty(self) -> bool: ...

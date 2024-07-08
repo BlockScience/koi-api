@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Optional, Dict, Union, List
+from typing import Optional, Union
 
 from .exceptions import *
 
@@ -108,7 +108,7 @@ class DataObject:
     def __init__(
             self, 
             json_data: Optional[dict] = None, 
-            files: Optional[List[Dict[str, Union[bytes, str]]]] = None
+            files: Optional[dict[str, Union[bytes, str]]] = None
         ):
         
         self.json_data = json_data

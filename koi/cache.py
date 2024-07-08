@@ -60,7 +60,7 @@ class CacheableObject:
     def directory_path(self):
         return f"{CACHE_DIRECTORY}/{self.encoded_rid}"
 
-    def write(self, data_object: Optional[DataObject] = None, from_dereference: bool = False):
+    def write(self, data_object: Optional[DataObject] = None, from_dereference: bool = False) -> CacheEntry:
         if (data_object is not None and from_dereference is True) or \
             (data_object is None and from_dereference is False):
 
@@ -70,10 +70,10 @@ class CacheableObject:
             data_object = self.rid.dereference()
 
         if not data_object:
-            return
+            return CacheEntry()
         
         if data_object.empty:
-            return
+            return CacheEntry()
 
         if data_object.files:
             if not os.path.exists(self.directory_path):
@@ -90,7 +90,7 @@ class CacheableObject:
             "rid": str(self.rid),
             "timestamp": time.time(),
             # not currently hashing file data
-            "sha256_hash": utils.hash_json(data_object.json_data),
+            "sha256_hash": utils.hash_json(data_object.json_data or {}),
             "files": list(data_object.files.keys()) if data_object.files else []
         }
 
