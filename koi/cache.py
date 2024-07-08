@@ -9,9 +9,6 @@ from .config import CACHE_DIRECTORY
 from . import utils
 
 
-if not os.path.exists(CACHE_DIRECTORY):
-    os.makedirs(CACHE_DIRECTORY)
-
 class CacheEntry:
     def __init__(
             self, 
@@ -61,6 +58,9 @@ class CacheableObject:
         return f"{CACHE_DIRECTORY}/{self.encoded_rid}"
 
     def write(self, data_object: Optional[DataObject] = None, from_dereference: bool = False) -> CacheEntry:
+        if not os.path.exists(CACHE_DIRECTORY):
+            os.makedirs(CACHE_DIRECTORY)
+
         if (data_object is not None and from_dereference is True) or \
             (data_object is None and from_dereference is False):
 

@@ -32,7 +32,7 @@ def continue_conversation(conversation_id, query):
         start_conversation(conversation_id)
     conversation = conversations.get(conversation_id)
 
-    knowledge = ""
+    knowledge = []
     rids = [RID.from_string(rid) for rid, score in vectorstore.query(query)]
     print(rids)
     for n, rid in enumerate(rids):
@@ -41,25 +41,34 @@ def continue_conversation(conversation_id, query):
             cached_object = rid.cache.write(from_dereference=True)
         
         text = cached_object.json_data["text"]
-        knowledge += f"Knowledge Object [{n+1}] {str(rid)}\n{text}\n\n"
+        knowledge.append({
+            "id": n + 1,
+            "rid": str(rid),
+            "text": text
+        })
 
+    knowledge_text = "\n".join([
+        f"Knowledge Object [{o['id']}] {o['rid']}\n{o['text']}\n"
+        for o in knowledge
+    ])
+
+    print(knowledge_text)
 
     # knowledge += "Footnotes:\n" + footnote_table
-
-    print(knowledge)
 
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=conversation + [{
             "role": "user",
-            "content": query + "\n\n" + knowledge
+            "content": query + "\n\n" + knowledge_text
         }]
     )
 
     # not including knowledge in conversation history, only active query
     conversation.append({
         "role": "user",
-        "content": query
+        "content": query,
+        "knowledge": knowledge
     })
 
     bot_message = response.choices[0].message.content

@@ -23,6 +23,7 @@ class CreateObject(BaseModel):
 @router.post("/object")
 def create_object(knowledge_obj: CreateObject):
     rid = knowledge_obj.rid
+    rid.graph.create()
     data_object = DataObject(json_data=knowledge_obj.data)
 
     cached_object = rid.cache.read()
@@ -118,12 +119,14 @@ class MergeLinkedSet(BaseModel):
 
 @router.post("/object/link")
 def merge_linked_set(linked_set: MergeLinkedSet):
+    print(linked_set.model_dump())
+
     rid = linked_set.rid
     target = rid.graph.read_link(linked_set.tag)
     
     if not target:
         set_rid = InternalSet(nanoid.generate())
-        set_rid.graph.create(linked_set.members)
+        members = set_rid.graph.create(linked_set.members)
         link_rid = InternalLink(rid, set_rid, linked_set.tag)
         link_rid.graph.create(
             source=rid,
@@ -131,10 +134,12 @@ def merge_linked_set(linked_set: MergeLinkedSet):
             tag=linked_set.tag
         )
     else:
-        members = target.graph.update(add_members=linked_set.members)
+        members, _ = target.graph.update(add_members=linked_set.members)
+
+    print(rid, members)
 
     return {
-        "rid": rid,
+        "rid": str(rid),
         "members": members
     }
         

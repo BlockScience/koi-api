@@ -71,11 +71,15 @@ def embed_objects(rids: List[RID]):
                 input_type="document"
             ).embeddings
         )
-        print(f"embedded {len(embeddings)} documents")
+        print(f"embedded {len(embeddings)}/{len(texts)} documents")
+
+    print("done embedding.")
 
     vectors = list(zip(
         ids, embeddings, meta
     ))
+
+    print("beginning upsert")
 
     for i in range(0, len(vectors), VOYAGEAI_BATCH_SIZE):
         step = min(i+VOYAGEAI_BATCH_SIZE, len(vectors))
@@ -94,7 +98,7 @@ def query(text):
     result = index.query(
         vector=query_embedding, 
         filter={
-            "character_length": {"$gt": 100}
+            "character_length": {"$gt": 200}
         },
         top_k=20, 
         include_metadata=True
@@ -116,6 +120,7 @@ def scrub():
     to_delete = []
     for rid in rids:
         if not rid.cache.read().json_data:
+            print(rid)
             to_delete.append(str(rid))
     
     index.delete(to_delete)

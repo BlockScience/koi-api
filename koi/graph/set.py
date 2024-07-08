@@ -1,4 +1,5 @@
 from neo4j import ManagedTransaction
+from rid_lib.core import RID
 
 from . import driver
 from .knowledge_object import GraphKnowledgeObject
@@ -35,7 +36,7 @@ class GraphSetObject(GraphKnowledgeObject):
             
             record = tx.run(READ_SET, rid=str(self.rid)).single()
             if record:
-                return record["members"]
+                return [RID.from_string(member) for member in record["members"]]
             
         return execute_read()
 
