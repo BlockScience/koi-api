@@ -1,12 +1,12 @@
-from typing import Optional, Union, List, Dict
+from typing import Optional, Union
 
 from fastapi import APIRouter
 from pydantic import BaseModel
 import nanoid
-from rid_lib.core import RID, DataObject
+from rid_lib.core import DataObject
 from rid_lib.spaces.internal import InternalLink, InternalSet
 
-from koi import graph, cache, vectorstore
+from koi import vectorstore
 from koi.exceptions import ResourceNotFoundError
 from koi.validators import RIDField
 
@@ -21,62 +21,42 @@ class CreateObject(BaseModel):
     create_embedding: Optional[bool] = True
 
 @router.post("/object")
-def create_object_endpoint(obj: CreateObject):
-    create_object(**obj.model_dump())
+def create_object(knowledge_obj: CreateObject):
+    rid = knowledge_obj.rid
+    data_object = DataObject(json_data=knowledge_obj.data)
 
-def create_object(
-    rid: RID,
-    data: Optional[dict] = None, 
-    use_dereference: Optional[bool] = True, 
-    overwrite: Optional[bool] = False, 
-    create_embedding: Optional[bool] = True
-):
-    data_object = DataObject(json_data=data)
-    graph.knowledge_object.create(rid)
-    
     cached_object = rid.cache.read()
-    if cached_object is None:
+    if cached_object.empty or knowledge_obj.overwrite:
         if not data_object.empty:
             print("writing cache with provided data")
             cached_object = rid.cache.write(data_object)
 
-        elif use_dereference:
+        elif knowledge_obj.use_dereference:
             print("writing cache with dereferenced data")
             cached_object = rid.cache.write(from_dereference=True)
-            
-    elif overwrite:
-        if not data_object.empty:
-            print("overwriting cache with provided data")
-            cached_object = rid.cache.write(data_object)
 
-        elif use_dereference:
-            print("overwriting cache with dereferenced data")
-            cached_object = rid.cache.write(from_dereference=True)
-
-    if create_embedding and (cached_object.json_data is not None) and ("text" in cached_object.json_data):
+    if knowledge_obj.create_embedding:
         vectorstore.embed_objects([rid])
     
     return cached_object.json()
 
 
 class CreateObjects(BaseModel):
-    rids: Dict[RIDField, Union[dict, None]]
+    rids: dict[RIDField, Union[dict, None]]
     use_dereference: Optional[bool] = True
     overwrite: Optional[bool] = False
     create_embedding: Optional[bool] = True
 
 @router.post("/objects")
-def create_objects_endpoint(payload: CreateObjects):
+def create_objects(knowledge_objs: CreateObjects):
     objects = {}
-    for rid, data in payload.rids.items():
-        objects[str(rid)] = create_object(rid, data, payload.use_dereference, payload.overwrite, False)        
+    for rid, data in knowledge_objs.rids.items():
+        objects[str(rid)] = create_object(CreateObject(
+            rid, data, knowledge_objs.use_dereference, knowledge_objs.overwrite, create_embedding=False
+        ))
 
-    if payload.create_embedding:
-        embeddable_rids = [
-            rid for rid in payload.rids.keys()
-            if rid.format == "message"
-        ]
-        vectorstore.embed_objects(embeddable_rids)
+    if knowledge_objs.create_embedding:
+        vectorstore.embed_objects(knowledge_objs.rids.keys())
 
     return objects
 
@@ -85,8 +65,9 @@ class ReadObject(BaseModel):
     rid: RIDField
 
 @router.get("/object")
-def read_object(obj: ReadObject):
-    return obj.rid.cache.read().json_data
+def read_object(knowledge_obj: ReadObject):
+    rid = knowledge_obj.rid
+    return rid.cache.read().json_data
 
 # @router.get("/{encoded_id:path}")
 # def read_object_path(encoded_id: str):
@@ -96,13 +77,14 @@ class DeleteObject(BaseModel):
     rid: RIDField
 
 @router.delete("/object")
-def delete_object(obj: DeleteObject):
-    success = graph.knowledge_object.delete(obj.rid)
+def delete_object(knowledge_obj: DeleteObject):
+    rid = knowledge_obj.rid
+    success = rid.graph.delete()
 
     if not success:
-        raise ResourceNotFoundError(obj.rid)
+        raise ResourceNotFoundError(rid)
 
-    cache.delete(obj.rid)
+    rid.cache.delete()
 
 
 class ReadObjectLink(BaseModel):
@@ -110,19 +92,20 @@ class ReadObjectLink(BaseModel):
     tag: str
 
 @router.get("/object/link")
-def read_object_link(obj: ReadObjectLink):
-    target = graph.knowledge_object.read_link(obj.rid, obj.tag)
+def read_object_link(obj_link: ReadObjectLink):
+    rid = obj_link.rid
+    target = rid.graph.read_link(obj_link.tag)
 
     if not target:
-        raise ResourceNotFoundError(obj.rid, detail=f"{obj.rid} has no link with tag '{obj.tag}'")
+        raise ResourceNotFoundError(rid, detail=f"{rid} has no link with tag '{obj_link.tag}'")
     
     result = {
-        "rid": str(obj.rid),
+        "rid": str(rid),
         "target_rid": str(target)
     }
     
     if isinstance(target, InternalSet):
-        members = graph.set.read(target)
+        members = target.graph.read()
         result["members"] = members
     
     return result
@@ -131,22 +114,27 @@ def read_object_link(obj: ReadObjectLink):
 class MergeLinkedSet(BaseModel):
     rid: RIDField
     tag: str
-    members: List[str] 
+    members: list[str] 
 
 @router.post("/object/link")
-def merge_linked_set(obj: MergeLinkedSet):
-    target = graph.knowledge_object.read_link(obj.rid, obj.tag)
+def merge_linked_set(linked_set: MergeLinkedSet):
+    rid = linked_set.rid
+    target = rid.graph.read_link(linked_set.tag)
     
     if not target:
         set_rid = InternalSet(nanoid.generate())
-        members = graph.set.create(set_rid, obj.members)
-        link_rid = InternalLink(obj.rid, set_rid, obj.tag)
-        graph.link.create(link_rid, obj.rid, set_rid, obj.tag)
+        set_rid.graph.create(linked_set.members)
+        link_rid = InternalLink(rid, set_rid, linked_set.tag)
+        link_rid.graph.create(
+            source=rid,
+            target=set_rid,
+            tag=linked_set.tag
+        )
     else:
-        members = graph.set.update(target, add_members=obj.members)
+        members = target.graph.update(add_members=linked_set.members)
 
     return {
-        "rid": obj.rid,
+        "rid": rid,
         "members": members
     }
         

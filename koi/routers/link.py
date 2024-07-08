@@ -2,7 +2,6 @@ from fastapi import APIRouter, status, HTTPException
 from pydantic import BaseModel
 from rid_lib.spaces.internal import InternalLink
 
-from koi import graph
 from koi.exceptions import ResourceNotFoundError
 from koi.validators import RIDField
 
@@ -14,27 +13,31 @@ router = APIRouter(
 
 class CreateLink(BaseModel):
     tag: str
-    source: str
-    target: str
+    source: RIDField
+    target: RIDField
 
 @router.post("")
-def create_link(obj: CreateLink):
-    if obj.source == obj.target:
+def create_link(link_obj: CreateLink):
+    if link_obj.source == link_obj.target:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Self links are not allowed, source and target must be different"
         )
 
-    rid = InternalLink(obj.source, obj.target, obj.tag)
-    success = graph.link.create(rid, obj.source, obj.target, obj.tag)
+    rid = InternalLink(link_obj.source, link_obj.target, link_obj.tag)
+    success = rid.graph.create(
+        source=link_obj.source,
+        target=link_obj.target,
+        tag=link_obj.tag
+    )
 
     if not success:
         raise ResourceNotFoundError(rid, detail="Source and/or target not found")
 
     return {
         "rid": str(rid),
-        "source": obj.source,
-        "target": obj.target
+        "source": str(link_obj.source),
+        "target": str(link_obj.target)
     }
 
 
@@ -42,16 +45,17 @@ class ReadLink(BaseModel):
     rid: RIDField
 
 @router.get("")
-def read_link(obj: ReadLink):
-    result = graph.link.read(obj.rid)
+def read_link(link_obj: ReadLink):
+    rid = link_obj.rid
+    result = rid.graph.read()
 
     if result is None:
-        raise ResourceNotFoundError(obj.rid)
+        raise ResourceNotFoundError(rid)
 
     source, target = result
 
     return {
-        "rid": str(obj.rid),
+        "rid": str(rid),
         "source": source,
         "target": target
     }
@@ -60,8 +64,9 @@ class DeleteLink(BaseModel):
     rid: RIDField
 
 @router.delete("")
-def delete_link(obj: DeleteLink):
-    success = graph.link.delete(obj.rid)
+def delete_link(link_obj: DeleteLink):
+    rid = link_obj.rid
+    success = rid.graph.delete()
 
     if not success:
-        raise ResourceNotFoundError(obj.rid)
+        raise ResourceNotFoundError(rid)

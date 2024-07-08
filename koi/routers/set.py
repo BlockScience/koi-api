@@ -5,7 +5,6 @@ from pydantic import BaseModel
 import nanoid
 from rid_lib.spaces.internal import InternalSet
 
-from koi import graph
 from koi.exceptions import ResourceNotFoundError
 from koi.validators import RIDField
 
@@ -15,14 +14,13 @@ router = APIRouter(
     tags=["Set"]
 )
 
-    
 class CreateSet(BaseModel):
     members: Optional[List[str]] = []
 
 @router.post("")
-def create_set(obj: CreateSet):
+def create_set(set_obj: CreateSet):
     rid = InternalSet(nanoid.generate())
-    members = graph.set.create(rid, obj.members)
+    members = rid.graph.create(rid, set_obj.members)
 
     return {
         "rid": str(rid),
@@ -34,14 +32,15 @@ class ReadSet(BaseModel):
     rid: RIDField
 
 @router.get("")
-def read_set(obj: ReadSet):
-    members = graph.set.read(obj.rid)
+def read_set(set_obj: ReadSet):
+    rid = set_obj.rid
+    members = rid.graph.read()
 
     if members is None:
-        raise ResourceNotFoundError(obj.rid)
+        raise ResourceNotFoundError(rid)
 
     return {
-        "rid": str(obj.rid),
+        "rid": str(rid),
         "members": members
     }
 
@@ -52,25 +51,30 @@ class UpdateSet(BaseModel):
     remove_members: Optional[List[str]] = []
 
 @router.put("")
-def update_set(obj: UpdateSet):
+def update_set(set_obj: UpdateSet):
+    rid = set_obj.rid
+
     # remove duplicates
-    add_members = set(obj.add_members)
-    remove_members = set(obj.remove_members)
+    add_members = set(set_obj.add_members)
+    remove_members = set(set_obj.remove_members)
 
     # remove intersecting rids (would be added and removed in same operation)
     intersection = add_members & remove_members
     add_members -= intersection
     remove_members -= intersection
 
-    result = graph.set.update(obj.rid, list(add_members), list(remove_members))
+    result = rid.graph.update(
+        add_members=list(add_members),
+        remove_members=list(remove_members)
+    )
 
     if result is None:
-        raise ResourceNotFoundError(obj.rid)
+        raise ResourceNotFoundError(rid)
 
     added_members, removed_members = result
 
     return {
-        "rid": str(obj.rid),
+        "rid": str(rid),
         "added_members": added_members,
         "removed_members": removed_members
     }
@@ -80,8 +84,9 @@ class DeleteSet(BaseModel):
     rid: RIDField
 
 @router.delete("")
-def delete_set(obj: DeleteSet):
-    success = graph.set.delete(obj.rid)
+def delete_set(set_obj: DeleteSet):
+    rid = set_obj.rid
+    success = rid.graph.delete()
 
     if not success:
-        raise ResourceNotFoundError(obj.rid)
+        raise ResourceNotFoundError(rid)
