@@ -1,5 +1,3 @@
-from typing import List
-
 import voyageai
 from pinecone import Pinecone, ServerlessSpec
 from rid_lib.core import RID
@@ -30,8 +28,8 @@ if PINECONE_INDEX_NAME not in pc.list_indexes().names():
 
 index = pc.Index(PINECONE_INDEX_NAME)
 
-def embed_objects(rids: List[RID]):
-    ids = [str(rid) for rid in rids]
+def embed_objects(rids: list[RID]):
+    ids = []
     texts = []
     meta = []
     
@@ -44,15 +42,17 @@ def embed_objects(rids: List[RID]):
         text = cached_object.json_data.get("text")
 
         if not text:
+            # print("deleting empty rid:", str(rid))
+            # delete(rid)
             continue
         
         prefix_embedding = cached_object.json_data.get("prefix_embedding", None)
         if prefix_embedding:
             text = prefix_embedding + text
 
-        print(f"embedding {str(rid)}:")
-        print(text)
+        print(f"embedding {str(rid)}")
         
+        ids.append(str(rid))
         texts.append(text)
         meta.append({
             "sha256_hash": cached_object.metadata.get("sha256_hash"),
@@ -74,6 +74,8 @@ def embed_objects(rids: List[RID]):
         print(f"embedded {len(embeddings)}/{len(texts)} documents")
 
     print("done embedding.")
+
+    print(len(ids), len(texts), len(embeddings), len(meta))
 
     vectors = list(zip(
         ids, embeddings, meta
@@ -106,8 +108,8 @@ def query(text):
 
     return [(m["id"], m["score"]) for m in result["matches"]]
 
-def read(rid):
-    return index.fetch([str(rid)])
+def read(rids):
+    return index.fetch([str(rid) for rid in rids])
 
 def delete(rid):
     index.delete([str(rid)])
