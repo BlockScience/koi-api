@@ -88,11 +88,16 @@ class CacheableObject:
 
         metadata = {
             "rid": str(self.rid),
+            "space": self.rid.space,
+            "format": self.rid.format,
             "timestamp": time.time(),
             # not currently hashing file data
             "sha256_hash": utils.hash_json(data_object.json_data or {}),
             "files": list(data_object.files.keys()) if data_object.files else []
         }
+
+        if "text" in data_object.json_data:
+            metadata["character_length"] = len(data_object.json_data["text"])
 
         cache_entry = CacheEntry(metadata, data_object.json_data)
 

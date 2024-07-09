@@ -32,20 +32,18 @@ def continue_conversation(conversation_id, query):
         start_conversation(conversation_id)
     conversation = conversations.get(conversation_id)
 
-    knowledge = []
-    rids = [RID.from_string(rid) for rid, score in vectorstore.query(query)]
-    print(rids)
-    for n, rid in enumerate(rids):
-        cached_object = rid.cache.read()
-        if cached_object.json_data is None:
-            cached_object = rid.cache.write(from_dereference=True)
-        
-        text = cached_object.json_data["text"]
-        knowledge.append({
-            "id": n + 1,
-            "rid": str(rid),
-            "text": text
-        })
+    documents = vectorstore.query(query)
+    knowledge = [
+        {
+            "id": document[0],
+            "rid": str(document[1]),
+            "text": document[2]
+        } for document in 
+            zip(
+                range(len(documents)),
+                *zip(*documents)
+            )
+    ]
 
     knowledge_text = "\n".join([
         f"Knowledge Object [{o['id']}] {o['rid']}\n{o['text']}\n"
@@ -74,15 +72,23 @@ def continue_conversation(conversation_id, query):
     bot_message = response.choices[0].message.content
 
     footnote_table = ""
-    for n, rid in enumerate(rids):
+    for doc in knowledge:
+        rid = doc["rid"]
+        n = doc["id"]
+
         line = f"{n+1}: <{rid}>"
         if f"[{n+1}]" not in bot_message:
+            cited = False
             line = f"~{line}~"
+        else:
+            cited = True
+        conversation[-1]["knowledge"][n]["cited"] = cited
         footnote_table += line + "\n"
     
     conversation.append({
         "role": "assistant",
-        "content": bot_message
+        "content": bot_message,
+        "footnotes": footnote_table
     })
 
     with open("conversations.json", "w") as f:
