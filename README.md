@@ -1,5 +1,54 @@
-# koi-api
-an api...
+# KOI API
+
+## Setup
+First we need to setup the Python environment by running the following commands. So far this has only been tested on Python 3.12.
+```bash
+# create and activate virtual environment 'venv/'
+python -m venv venv
+
+# on Windows
+.\venv\Scripts\activate
+# on Linux
+source /venv/bin/activate
+
+# install dependencies
+pip install -r requirements.txt
+```
+
+Next we will setup all of the necessary API keys. Create a file named `.env` in the root directory of the repository and copy and paste the following in:
+
+```bash
+# .env
+
+OPENAI_API_KEY=
+PINECONE_API_KEY=
+VOYAGE_API_KEY=
+
+SLACK_BOT_TOKEN=
+SLACK_SIGNING_SECRET=
+
+PUBPUB_USERNAME=
+PUBPUB_PASSWORD=
+```
+
+The current version requires [OpenAI](https://platform.openai.com/), [Pinecone](https://www.pinecone.io/), and [VoyageAI](https://www.voyageai.com/) API keys to function. Slack and PubPub are not required, but will throw errors if you attempt to dereference corresponding RID objects server side. (Even if you aren't using them, keep the definition with the empty string in the `.env` file or you will get an error.)
+
+
+The final component is to connect to Neo4j. If you already have a local or remote database instance setup, you can change the configured URI, authorization, and database name in `koi/config.py`.
+
+Otherwise, you can follow the instructions for your operating system here: https://neo4j.com/docs/operations-manual/current/installation/ 
+
+If you want to use the default configuration, create a local DBMS with the default name and password set to `koi-pond`.
+
+Everything is configured now, and the API server can be run with the following command:
+```bash
+python -m koi
+```
+
+If everything worked correctly, you should see a development server running on `http://127.0.0.1:8000`. Auto generated API documentation can be viewed at http://127.0.0.1:8000/docs.
+
+
+
 
 ### Note on external services
 This system is configured to use the following external platforms (but they can be fairly easily swapped out): OpenAI's GPT-4o, Voyage AI's voyage-2 embedding model, and Pinecone's serverless vectorstore. As per OpenAI's [data privacy page](https://openai.com/enterprise-privacy/), business data is not used for training and the user retains ownership of both inputs and outputs. According to Pinecone's [trust and security page](https://www.pinecone.io/security/), their data privacy policies are compliant with a wide range of standards including CCPA, GDPR, HIPAA, and SOC 2. Voyage AI allows opting out of data training for future models on the [dashboard terms of service page](https://dash.voyageai.com/terms-of-service) (must be logged in to view), but by default applies the following data policy:
@@ -7,7 +56,7 @@ This system is configured to use the following external platforms (but they can 
 
 If you are replicating this project, it is highly recommended that you opt-out before embedding any data.
 
-## API Specification
+## OLD (TODO: Update)
 
 ### (Knowledge) Objects
 
@@ -37,8 +86,8 @@ DELETE /object
 }
 ```
 
-## TODO
-### Classes
+### TODO
+#### Classes
 - Base RID
     - `space/type:reference` format
     - dereference function
@@ -48,7 +97,7 @@ DELETE /object
     - Undirected Assertion
     - Directed Assertion
 
-### Endpoints
+#### Endpoints
 - Objects
     - graph actions
         - create (observe)

@@ -9,3 +9,4 @@ voyageai
 pinecone-client
 openai
 slack-bolt
+html2text
