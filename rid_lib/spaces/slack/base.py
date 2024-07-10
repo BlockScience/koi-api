@@ -9,7 +9,7 @@ from rid_lib.config import (
 
 class SlackSpace(RID):
     space = "slack"
-    app = None
+    _app = None
 
     _domain_workspace_table = {
         "metagov": "TMQ3PKXT9",
@@ -21,11 +21,15 @@ class SlackSpace(RID):
     def __init__(self):
         super().__init__()
 
-        if not SlackSpace.app:
-            SlackSpace.app = slack_bolt.App(
+    @property
+    def app(self):
+        if not SlackSpace._app:
+            SlackSpace._app = slack_bolt.App(
                 token=SLACK_BOT_TOKEN,
                 signing_secret=SLACK_SIGNING_SECRET
             )
+        
+        return SlackSpace._app
 
     def authorized_request(self, url, data=None, method="GET"):
         headers = {
