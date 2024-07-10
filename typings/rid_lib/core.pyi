@@ -30,6 +30,9 @@ class RID:
     def __post_init__(self) -> None: ...
 
     @staticmethod
+    def _add_type(Type: RID) -> None: ...
+
+    @staticmethod
     def from_string(rid_str: str) -> RIDTypes: ...
 
     @property

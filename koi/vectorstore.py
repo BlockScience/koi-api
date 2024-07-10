@@ -232,7 +232,7 @@ def query(text):
             print(f"slicing rid {rid} chunk {chunk_id} at {start}:{end}")
             text = text[start:end]
 
-        docs.append([rid, text])
+        docs.append([rid, text, chunk_id])
     return docs
 
 

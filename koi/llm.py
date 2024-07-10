@@ -35,9 +35,10 @@ def continue_conversation(conversation_id, query):
     documents = vectorstore.query(query)
     knowledge = [
         {
-            "id": document[0],
+            "id": document[0] + 1,
             "rid": str(document[1]),
-            "text": document[2]
+            "text": document[2],
+            "chunk": document[3]
         } for document in 
             zip(
                 range(len(documents)),

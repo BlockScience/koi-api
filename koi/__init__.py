@@ -6,6 +6,7 @@ from koi.routers import (
     link,
     set
 )
+import extended_rids
 from koi import extensions
 
 extensions.patch_rid()
