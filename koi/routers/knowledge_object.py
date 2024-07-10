@@ -6,7 +6,6 @@ import nanoid
 from rid_lib.core import DataObject
 from rid_lib.spaces.internal import InternalLink, InternalSet
 
-from koi import vectorstore
 from koi.exceptions import ResourceNotFoundError
 from koi.validators import RIDField
 
@@ -37,7 +36,7 @@ def create_object(knowledge_obj: CreateObject):
             cached_object = rid.cache.write(from_dereference=True)
 
     if knowledge_obj.create_embedding:
-        vectorstore.embed_objects([rid])
+        rid.vector.embed()
     
     return cached_object.json()
 
@@ -53,11 +52,8 @@ def create_objects(knowledge_objs: CreateObjects):
     objects = {}
     for rid, data in knowledge_objs.rids.items():
         objects[str(rid)] = create_object(CreateObject(
-            rid, data, knowledge_objs.use_dereference, knowledge_objs.overwrite, create_embedding=False
+            rid, data, knowledge_objs.use_dereference, knowledge_objs.overwrite, knowledge_objs.create_embedding
         ))
-
-    if knowledge_objs.create_embedding:
-        vectorstore.embed_objects(knowledge_objs.rids.keys())
 
     return objects
 

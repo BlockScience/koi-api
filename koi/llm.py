@@ -77,13 +77,13 @@ def continue_conversation(conversation_id, query):
         rid = doc["rid"]
         n = doc["id"]
 
-        line = f"{n+1}: <{rid}>"
-        if f"[{n+1}]" not in bot_message:
+        line = f"{n}: <{rid}>"
+        if f"[{n}]" not in bot_message:
             cited = False
             line = f"~{line}~"
         else:
             cited = True
-        conversation[-1]["knowledge"][n]["cited"] = cited
+        conversation[-1]["knowledge"][n-1]["cited"] = cited
         footnote_table += line + "\n"
     
     conversation.append({

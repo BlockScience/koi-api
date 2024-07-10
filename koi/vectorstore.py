@@ -35,6 +35,25 @@ def setup_pinecone_index():
     
     return pinecone_client.Index(PINECONE_INDEX_NAME)
 
+def chunkify_text(text):
+    chunks = []
+    if len(text) > MAX_CHUNK_SIZE:
+        start = 0
+        end = MAX_CHUNK_SIZE
+        while start < len(text):
+            chunks.append({
+                "text": text[start:end],
+                "start": start,
+                "end": end
+            })
+            start += (MAX_CHUNK_SIZE - CHUNK_OVERLAP)
+            end = start + MAX_CHUNK_SIZE
+    else:
+        chunks.append({
+            "text": text
+        })
+    
+    return chunks
 
 class VectorObject:
     pinecone_index = setup_pinecone_index()
@@ -42,7 +61,7 @@ class VectorObject:
     queue_limit = 100
 
     def __init__(self, rid: RID):
-        self.rid = rid            
+        self.rid = rid
 
     def embed(self, flush_queue=False):
         cached_object = self.rid.cache.read()
@@ -56,37 +75,32 @@ class VectorObject:
         del meta["files"]
         meta["text"] = text
 
-        if len(text) > MAX_CHUNK_SIZE:
-            start = 0
-            end = MAX_CHUNK_SIZE
-            count = 0
-            while start < len(text):
-                rid_fragment = f"{self.rid}#chunk:{count}"
-                chunk_text = text[start:end]
+        chunks = chunkify_text(text)
+        if len(chunks) == 1:
+            self.embedding_queue.append([
+                str(self.rid), text, meta
+            ])
+            print(f"added {self.rid} to embedding queue")
+
+        else:
+            for i, chunk in enumerate(chunks):
+                rid_fragment = f"{self.rid}#chunk:{i}"
+                chunk_text = chunk["text"]
                 chunk_meta = {
                     **meta,
                     "character_length": len(chunk_text),
                     "text": chunk_text,
-                    "chunk_start": start,
-                    "chunk_end": end
+                    "chunk_start": chunk["start"],
+                    "chunk_end": chunk["end"],
+                    "chunk_id": i,
+                    "num_chunks": len(chunks)
                 }
-
-                print(f"adding {rid_fragment} to embedding queue")
-
+                
                 self.embedding_queue.append([
                     rid_fragment, chunk_text, chunk_meta
                 ])
+            print(f"added {self.rid} to embedding queue ({len(chunks)} chunks)")
 
-                start += (MAX_CHUNK_SIZE - CHUNK_OVERLAP)
-                end = start + MAX_CHUNK_SIZE
-                count += 1
-
-        else:
-            print(f"adding {self.rid} to embedding queue")
-
-            self.embedding_queue.append([
-                str(self.rid), text, meta
-            ])
 
         if flush_queue is True or len(self.embedding_queue) > self.queue_limit:
             self.embed_queue()
@@ -119,11 +133,42 @@ class VectorObject:
         cls.pinecone_index.upsert(
             vectors=vectors, batch_size=PINECONE_BATCH_SIZE
         )
-        print(f"upserted {len(vectors)} objects")
         cls.embedding_queue = []
 
     def read(self):
-        return self.pinecone_index.fetch([str(self.rid)])
+        rid_fragment = str(self.rid) + "#chunk:0"
+        potential_ids = [
+            str(self.rid),
+            rid_fragment
+        ]
+
+        print(potential_ids)
+        resp = self.pinecone_index.fetch(potential_ids)
+        vectors = resp.to_dict()["vectors"]
+
+        print(vectors.keys())
+
+        if str(self.rid) in vectors:
+            print("not split")
+            obj = vectors[str(self.rid)]
+            return obj["metadata"]
+
+        elif rid_fragment in vectors:
+            print("split")
+            obj = vectors[rid_fragment]
+            num_chunks = int(obj["metadata"]["num_chunks"])
+
+            chunk_ids = [
+                str(self.rid) + "#chunk:" + str(i)
+                for i in range(num_chunks)
+            ]
+
+            resp = self.pinecone_index.fetch(chunk_ids)
+            vectors = resp.to_dict()["vectors"]
+            return [vectors[chunk_id]["metadata"] for chunk_id in chunk_ids]
+
+        else:
+            return None
 
     def delete(self):
         return self.pinecone_index.delete([str(self.rid)])
