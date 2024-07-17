@@ -10,3 +10,4 @@ pinecone-client
 openai
 slack-bolt
 langchain_text_splitters
+html2text
