@@ -184,12 +184,16 @@ class EmbeddableObject:
             ids, embeddings, metas
         ))
 
-        cls.pinecone_index.upsert(
+        pinecone_index.upsert(
             vectors=vectors, batch_size=PINECONE_BATCH_SIZE
         )
         cls.embedding_queue = []
 
-    def read(self):
+    def get_vector_ids(self, return_vectors=False):
+        """
+        If the RID is not chunked, it will have one vector where the id is its RID. If the RID is chunked, its id will take the form '{RID}#chunk:{id}'. It will test both possible starting ids to determine whether the RID is chunked, and find the other ids if it is.
+        """
+
         rid_fragment_str = create_rid_fragment_string(self.rid, 0)
         potential_ids = [
             str(self.rid),
@@ -199,33 +203,46 @@ class EmbeddableObject:
         resp = pinecone_index.fetch(potential_ids)
         vectors = resp.to_dict()["vectors"]
 
+        vector_ids = []
+
         if str(self.rid) in vectors:
+            vector_ids.append(str(self.rid))
+        elif rid_fragment_str in vectors:
+            num_chunks = int(vectors[rid_fragment_str]["metadata"]["num_chunks"])
+            for chunk_id in range(num_chunks):
+                vector_ids.append(
+                    create_rid_fragment_string(self.rid, chunk_id)
+                )
+        
+        if return_vectors:
+            return vector_ids, vectors
+        else:
+            return vector_ids
+
+
+    def read(self):
+        vector_ids, vectors = self.get_vector_ids(return_vectors=True)
+
+        if len(vector_ids) == 1:
+            vector_id = vector_ids[0]
             return [
-                VectorObject(self.rid, vectors[str(self.rid)])
+                VectorObject(self.rid, vectors[vector_id])
             ]
         
-        elif rid_fragment_str in vectors:
-            obj = vectors[rid_fragment_str]
-            num_chunks = int(obj["metadata"]["num_chunks"])
-
-            chunk_ids = [
-                create_rid_fragment_string(self.rid, i)
-                for i in range(num_chunks)
-            ]
-
-            resp = pinecone_index.fetch(chunk_ids)
+        elif len(vector_ids) > 1:
+            resp = pinecone_index.fetch(vector_ids)
             chunk_vectors = resp.to_dict()["vectors"]
 
             return [
-                VectorObject(self.rid, chunk_vectors[chunk_id])
-                for chunk_id in chunk_ids
+                VectorObject(self.rid, chunk_vectors[vector_id])
+                for vector_id in vector_ids
             ]
 
         else:
             return []
 
     def delete(self):
-        return pinecone_index.delete([str(self.rid)])
+        return pinecone_index.delete(self.get_vector_ids())
 
 
 def query_ids(text):
