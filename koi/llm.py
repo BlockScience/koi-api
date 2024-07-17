@@ -51,8 +51,6 @@ def continue_conversation(conversation_id, query):
         for o in knowledge
     ])
 
-    print(knowledge_text)
-
     # knowledge += "Footnotes:\n" + footnote_table
 
     response = client.chat.completions.create(

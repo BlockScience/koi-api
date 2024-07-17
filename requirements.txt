@@ -9,3 +9,4 @@ voyageai
 pinecone-client
 openai
 slack-bolt
+langchain_text_splitters

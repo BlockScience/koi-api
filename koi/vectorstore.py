@@ -1,5 +1,6 @@
 import voyageai
 from pinecone import Pinecone, ServerlessSpec
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from rid_lib.core import RID
 
 from .config import (
@@ -13,41 +14,41 @@ from .config import (
     EMBEDDINGS_DIMENSION, 
     VOYAGEAI_MODEL, 
     VOYAGEAI_BATCH_SIZE,
-    MAX_CHUNK_SIZE,
+    CHUNK_SIZE,
     CHUNK_OVERLAP
 )
 
 
-pinecone_client = Pinecone(api_key=PINECONE_API_KEY)
 voyageai_client = voyageai.Client(api_key=VOYAGEAI_API_KEY)
+pinecone_client = Pinecone(api_key=PINECONE_API_KEY)
 
-def setup_pinecone_index():
-    if PINECONE_INDEX_NAME not in pinecone_client.list_indexes().names():
-        pinecone_client.create_index(
-            name=PINECONE_INDEX_NAME,
-            dimension=EMBEDDINGS_DIMENSION,
-            spec=ServerlessSpec(
-                cloud=PINECONE_CLOUD_PROVIDER,
-                region=PINECONE_CLOUD_REGION
-            ),
-            metric=PINECONE_INDEX_METRIC
-        )
-    
-    return pinecone_client.Index(PINECONE_INDEX_NAME)
+if PINECONE_INDEX_NAME not in pinecone_client.list_indexes().names():
+    pinecone_client.create_index(
+        name=PINECONE_INDEX_NAME,
+        dimension=EMBEDDINGS_DIMENSION,
+        spec=ServerlessSpec(
+            cloud=PINECONE_CLOUD_PROVIDER,
+            region=PINECONE_CLOUD_REGION
+        ),
+        metric=PINECONE_INDEX_METRIC
+    )
+
+pinecone_index = pinecone_client.Index(PINECONE_INDEX_NAME)
+
 
 def chunkify_text(text):
     chunks = []
-    if len(text) > MAX_CHUNK_SIZE:
+    if len(text) > CHUNK_SIZE:
         start = 0
-        end = MAX_CHUNK_SIZE
+        end = CHUNK_SIZE
         while start < len(text):
             chunks.append({
                 "text": text[start:end],
                 "start": start,
                 "end": end
             })
-            start += (MAX_CHUNK_SIZE - CHUNK_OVERLAP)
-            end = start + MAX_CHUNK_SIZE
+            start += (CHUNK_SIZE - CHUNK_OVERLAP)
+            end = start + CHUNK_SIZE
     else:
         chunks.append({
             "text": text
@@ -55,8 +56,45 @@ def chunkify_text(text):
     
     return chunks
 
+def create_rid_fragment_string(rid, chunk_id):
+    return f"{rid}#chunk:{chunk_id}"
+
+
 class VectorObject:
-    pinecone_index = setup_pinecone_index()
+    def __init__(
+            self,
+            rid: RID,
+            vector: dict
+        ):
+
+        self.rid = rid
+        self.values = vector["values"]
+        self.metadata = vector["metadata"]
+        self.is_chunk = "chunk_id" in self.metadata
+
+        if self.is_chunk:
+            self.chunk_id = int(vector["metadata"]["chunk_id"])
+            self.chunk_start = int(self.metadata["chunk_start"])
+            self.chunk_end = int(self.metadata["chunk_end"])
+
+            self.id = create_rid_fragment_string(self.rid, self.chunk_id)
+        
+        else:
+            self.id = str(self.rid)
+
+
+    def get_text(self):
+        cached_obj = self.rid.cache.read()
+        text = cached_obj.json_data.get("text")
+        if not text: return
+
+        if self.is_chunk:
+            return text[self.chunk_start:self.chunk_end]
+        else:
+            return text
+
+
+class EmbeddableObject:
     embedding_queue = []
     queue_limit = 100
 
@@ -75,7 +113,22 @@ class VectorObject:
         del meta["files"]
         meta["text"] = text
 
-        chunks = chunkify_text(text)
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=CHUNK_SIZE,
+            chunk_overlap=CHUNK_OVERLAP
+        )
+
+        chunks = []
+        for doc in text_splitter.create_documents([text]):
+            chunk_text = doc.page_content
+            start = text.find(chunk_text)
+            end = start + len(chunk_text)
+            chunks.append({
+                "text": chunk_text,
+                "start": start,
+                "end": end
+            })
+
         if len(chunks) == 1:
             self.embedding_queue.append([
                 str(self.rid), text, meta
@@ -84,7 +137,7 @@ class VectorObject:
 
         else:
             for i, chunk in enumerate(chunks):
-                rid_fragment = f"{self.rid}#chunk:{i}"
+                rid_fragment = create_rid_fragment_string(self.rid, i)
                 chunk_text = chunk["text"]
                 chunk_meta = {
                     **meta,
@@ -95,12 +148,13 @@ class VectorObject:
                     "chunk_id": i,
                     "num_chunks": len(chunks)
                 }
+
+                print(f"{self.rid} chunk {i+1}/{len(chunks)} [{chunk['start']}:{chunk['end']}]")
                 
                 self.embedding_queue.append([
                     rid_fragment, chunk_text, chunk_meta
                 ])
             print(f"added {self.rid} to embedding queue ({len(chunks)} chunks)")
-
 
         if flush_queue is True or len(self.embedding_queue) > self.queue_limit:
             self.embed_queue()
@@ -136,166 +190,52 @@ class VectorObject:
         cls.embedding_queue = []
 
     def read(self):
-        rid_fragment = str(self.rid) + "#chunk:0"
+        rid_fragment_str = create_rid_fragment_string(self.rid, 0)
         potential_ids = [
             str(self.rid),
-            rid_fragment
+            rid_fragment_str
         ]
 
-        print(potential_ids)
-        resp = self.pinecone_index.fetch(potential_ids)
+        resp = pinecone_index.fetch(potential_ids)
         vectors = resp.to_dict()["vectors"]
 
-        print(vectors.keys())
-
         if str(self.rid) in vectors:
-            print("not split")
-            obj = vectors[str(self.rid)]
-            return obj["metadata"]
-
-        elif rid_fragment in vectors:
-            print("split")
-            obj = vectors[rid_fragment]
+            return [
+                VectorObject(self.rid, vectors[str(self.rid)])
+            ]
+        
+        elif rid_fragment_str in vectors:
+            obj = vectors[rid_fragment_str]
             num_chunks = int(obj["metadata"]["num_chunks"])
 
             chunk_ids = [
-                str(self.rid) + "#chunk:" + str(i)
+                create_rid_fragment_string(self.rid, i)
                 for i in range(num_chunks)
             ]
 
-            resp = self.pinecone_index.fetch(chunk_ids)
-            vectors = resp.to_dict()["vectors"]
-            return [vectors[chunk_id]["metadata"] for chunk_id in chunk_ids]
+            resp = pinecone_index.fetch(chunk_ids)
+            chunk_vectors = resp.to_dict()["vectors"]
+
+            return [
+                VectorObject(self.rid, chunk_vectors[chunk_id])
+                for chunk_id in chunk_ids
+            ]
 
         else:
-            return None
+            return []
 
     def delete(self):
-        return self.pinecone_index.delete([str(self.rid)])
+        return pinecone_index.delete([str(self.rid)])
 
-
-
-
-pc = Pinecone(api_key=PINECONE_API_KEY)
-vc = voyageai.Client(api_key=VOYAGEAI_API_KEY)
-
-if PINECONE_INDEX_NAME not in pc.list_indexes().names():
-    pc.create_index(
-        PINECONE_INDEX_NAME,
-        dimension=EMBEDDINGS_DIMENSION,
-        spec=ServerlessSpec(
-            cloud="aws",
-            region="us-east-1"
-        ),
-        metric="cosine"
-    )
-
-index = pc.Index(PINECONE_INDEX_NAME)
-
-def get_num_chunks(total_char_len, chunk_size=MAX_CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP):
-    import math
-    chunk_step = chunk_size - chunk_overlap
-    return math.ceil((total_char_len - chunk_overlap) / chunk_step)
-
-def get_chunk_offset(chunk_id, chunk_size=MAX_CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP):
-    chunk_step = chunk_size - chunk_overlap
-    return chunk_id * chunk_step
-    
-
-def create_embeddings(docs: list[str]):
-    embeddings = []
-    while len(embeddings) < len(docs):
-        i = len(embeddings)
-        embeddings.extend(
-            vc.embed(
-                texts=docs[i:i+VOYAGEAI_BATCH_SIZE],
-                model=VOYAGEAI_MODEL,
-                input_type="document"
-            ).embeddings
-        )
-        print(f"created embeddings for {i+VOYAGEAI_BATCH_SIZE} objects")
-    return embeddings
-
-def embed_objects(rids: list[RID]):
-    total_rids = len(rids)
-    accepted_rids = 0
-
-    objects = []
-    for rid in rids:
-        cached_object = rid.cache.read()
-        
-        if cached_object.json_data is None:
-            continue
-        
-        text = cached_object.json_data.get("text")
-
-        meta = cached_object.metadata
-        del meta["files"]
-        meta["text"] = text
-
-        if not text:
-            continue
-
-        if len(text) > MAX_CHUNK_SIZE:
-            num_chunks = get_num_chunks(len(text))
-            for chunk_id in range(num_chunks):
-                start = get_chunk_offset(chunk_id)
-                end = min(start + MAX_CHUNK_SIZE, len(text))
-
-                print(f"slice {start}:{end}")
-
-                text_chunk = text[start:end]
-
-                rid_fragment = f"{rid}#chunk:{chunk_id}"
-
-                chunk_meta = {
-                    **meta,
-                    "character_length": len(text_chunk),
-                    "chunk_id": chunk_id,
-                    "total_chunks": num_chunks,
-                    "chunk_size": MAX_CHUNK_SIZE,
-                    "chunk_overlap": CHUNK_OVERLAP,
-                    "text": text_chunk
-                }
-
-                objects.append([
-                    rid_fragment, text_chunk, chunk_meta
-                ])
-
-            print(f"{rid} split into {num_chunks} chunks")
-
-        else:
-            objects.append([
-                str(rid), text, meta
-            ])
-            print(f"{rid}")
-
-        accepted_rids += 1
-
-    print(f"{accepted_rids}/{total_rids} processed resulting in {len(objects)} objects")
-
-    if not objects:
-        return
-
-    # converting object texts to embeddings
-    ids, texts, metas = list(zip(*objects))
-    vectors = list(zip(
-        ids, create_embeddings(texts), metas
-    ))
-
-    index.upsert(vectors, batch_size=VOYAGEAI_BATCH_SIZE)
-    print(f"upserted {len(vectors)} objects")
-    print(index.describe_index_stats())
-    
 
 def query_ids(text):
-    query_embedding = vc.embed(
+    query_embedding = voyageai_client.embed(
         texts=[text],
         model=VOYAGEAI_MODEL,
         input_type="query",
     ).embeddings
 
-    result = index.query(
+    result = pinecone_index.query(
         vector=query_embedding, 
         filter={
             "character_length": {"$gt": 200}
@@ -304,11 +244,11 @@ def query_ids(text):
         include_metadata=True
     )
 
-    return [(m["id"], m["score"]) for m in result["matches"]]
+    return [(m["id"], m["score"], m["metadata"]) for m in result["matches"]]
 
 def query(text):
     docs = []
-    for id, score in query_ids(text):
+    for id, score, metadata in query_ids(text):
         components = id.rsplit("#", 1)
         if len(components) == 1:
             rid_str, = components
@@ -327,8 +267,8 @@ def query(text):
 
         if chunk_str:
             chunk_id = int(chunk_str.split(":")[1])
-            start = get_chunk_offset(chunk_id)
-            end = min(len(text), start + MAX_CHUNK_SIZE)
+            start = int(metadata["chunk_start"])
+            end = int(metadata["chunk_end"])
             print(f"slicing rid {rid} chunk {chunk_id} at {start}:{end}")
             text = text[start:end]
 
@@ -336,18 +276,12 @@ def query(text):
     return docs
 
 
-def read(rids):
-    return index.fetch([str(rid) for rid in rids])
-
-def delete(rids):
-    return index.delete([str(rid) for rid in rids])
-
 def drop():
-    index.delete(list(index.list()))
+    pinecone_index.delete(list(pinecone_index.list()))
 
 def scrub():
     rids = []
-    for ids in index.list():
+    for ids in pinecone_index.list():
         rids.extend([RID.from_string(id) for id in ids])
 
     to_delete = []
@@ -356,4 +290,4 @@ def scrub():
             print(rid)
             to_delete.append(str(rid))
     
-    index.delete(to_delete)
+    pinecone_index.delete(to_delete)
