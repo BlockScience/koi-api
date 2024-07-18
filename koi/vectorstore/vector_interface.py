@@ -15,7 +15,7 @@ def create_rid_fragment_string(rid, chunk_id):
     return f"{rid}#chunk:{chunk_id}"
 
 
-class EmbeddableObject:
+class VectorInterface:
     embedding_queue = []
     queue_limit = 100
 

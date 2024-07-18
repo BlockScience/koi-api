@@ -2,8 +2,8 @@ from rid_lib.core import RID
 from rid_lib.types import InternalLink, InternalSet
 
 from .graph import GraphKnowledgeObject, GraphSetObject, GraphLinkObject
-from .cache import CacheableObject
-from .vectorstore import EmbeddableObject
+from .cache import CacheInterface
+from .vectorstore import VectorInterface
 
 
 def purge(self: RID):
@@ -18,8 +18,8 @@ def extended_rid_post_init(self):
     else:
         self.graph = GraphKnowledgeObject(self)
 
-    self.cache = CacheableObject(self)
-    self.vector = EmbeddableObject(self)
+    self.cache = CacheInterface(self)
+    self.vector = VectorInterface(self)
 
     self.purge = purge
 

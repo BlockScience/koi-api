@@ -38,7 +38,7 @@ def create_object(knowledge_obj: CreateObject):
     if knowledge_obj.create_embedding:
         rid.vector.embed()
     
-    return cached_object.json()
+    return cached_object.to_dict()
 
 
 class CreateObjects(BaseModel):

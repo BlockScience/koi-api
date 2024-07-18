@@ -13,8 +13,9 @@ from rid_lib.types import (
 )
 
 from koi.graph import GraphKnowledgeObject, GraphLinkObject, GraphSetObject
-from koi.cache import CacheableObject
-from koi.vectorstore import EmbeddableObject
+from koi.cache import CacheInterface
+from koi.vectorstore import VectorInterface
+
 
 RIDTypes = InternalLink | InternalSet | SlackChannel | SlackFile | SlackMessage | SlackMessage | SlackUser | SlackWorkspace | SubstackPublication | SubstackPost
 
@@ -26,8 +27,8 @@ class RID:
         self.reference: str
 
         self.graph: Union[GraphKnowledgeObject, GraphLinkObject, GraphSetObject]
-        self.cache: CacheableObject
-        self.vector: EmbeddableObject
+        self.cache: CacheInterface
+        self.vector: VectorInterface
 
     def __post_init__(self) -> None: ...
 
