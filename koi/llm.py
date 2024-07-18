@@ -5,7 +5,7 @@ import nanoid
 from rid_lib.core import RID
 
 from .config import OPENAI_API_KEY
-from . import vectorstore
+from .vectorstore import VectorInterface
 
 
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -32,7 +32,7 @@ def continue_conversation(conversation_id, query):
         start_conversation(conversation_id)
     conversation = conversations.get(conversation_id)
 
-    vectors = vectorstore.query(query)
+    vectors = VectorInterface.query(query)
 
     knowledge_text = "\n".join([
         f"Knowledge Object [{n}] {v.rid}\n{v.get_text()}\n"

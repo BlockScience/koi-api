@@ -11,10 +11,6 @@ from .base import pinecone_index, voyage_embed_texts
 from .vector_object import VectorObject
 
 
-def create_rid_fragment_string(rid, chunk_id):
-    return f"{rid}#chunk:{chunk_id}"
-
-
 class VectorInterface:
     embedding_queue = []
     queue_limit = 100
@@ -58,7 +54,7 @@ class VectorInterface:
 
         else:
             for i, chunk in enumerate(chunks):
-                rid_fragment = create_rid_fragment_string(self.rid, i)
+                rid_fragment = self.create_rid_fragment_string(self.rid, i)
                 chunk_text = chunk["text"]
                 chunk_meta = {
                     **meta,
@@ -109,7 +105,7 @@ class VectorInterface:
         If the RID is not chunked, it will have one vector where the id is its RID. If the RID is chunked, its id will take the form '{RID}#chunk:{id}'. It will test both possible starting ids to determine whether the RID is chunked, and find the other ids if it is.
         """
 
-        rid_fragment_str = create_rid_fragment_string(self.rid, 0)
+        rid_fragment_str = self.create_rid_fragment_string(self.rid, 0)
         potential_ids = [
             str(self.rid),
             rid_fragment_str
@@ -126,7 +122,7 @@ class VectorInterface:
             num_chunks = int(vectors[rid_fragment_str]["metadata"]["num_chunks"])
             for chunk_id in range(num_chunks):
                 vector_ids.append(
-                    create_rid_fragment_string(self.rid, chunk_id)
+                    self.create_rid_fragment_string(self.rid, chunk_id)
                 )
         
         if return_vectors:
@@ -154,6 +150,28 @@ class VectorInterface:
 
         else:
             return []
-
+        
     def delete(self):
         return pinecone_index.delete(self.get_vector_ids())
+    
+    @staticmethod
+    def create_rid_fragment_string(rid, chunk_id):
+        return f"{rid}#chunk:{chunk_id}"
+    
+    @staticmethod
+    def query(text, top_k=10, filter={"character_length": {"$gt": 200}}):
+        result = pinecone_index.query(
+            vector=voyage_embed_texts([text], input_type="query"),
+            filter=filter,
+            top_k=top_k,
+            include_metadata=True
+        )
+        vectors = result["matches"]
+
+        return [
+            VectorObject(v) for v in vectors
+        ]
+    
+    @staticmethod
+    def drop():
+        pinecone_index.delete(delete_all=True)
