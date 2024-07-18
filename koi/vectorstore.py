@@ -63,13 +63,14 @@ def create_rid_fragment_string(rid, chunk_id):
 class VectorObject:
     def __init__(
             self,
-            rid: RID,
             vector: dict
         ):
 
-        self.rid = rid
-        self.values = vector["values"]
-        self.metadata = vector["metadata"]
+        self.id = vector.get("id")
+        self.metadata = vector.get("metadata")
+        self.values = vector.get("values")
+        self.score = vector.get("score")
+        self.rid = RID.from_string(self.metadata["rid"])
         self.is_chunk = "chunk_id" in self.metadata
 
         if self.is_chunk:
@@ -77,11 +78,23 @@ class VectorObject:
             self.chunk_start = int(self.metadata["chunk_start"])
             self.chunk_end = int(self.metadata["chunk_end"])
 
-            self.id = create_rid_fragment_string(self.rid, self.chunk_id)
-        
-        else:
-            self.id = str(self.rid)
-
+    def to_dict(self):
+        json_data = {
+            "id": self.id, 
+            "rid": str(self.rid),
+            "score": self.score,
+            "metadata": self.metadata,
+            "text": self.get_text(),
+            "is_chunk": self.is_chunk,
+        }
+# 
+        if self.is_chunk:
+            json_data.update({
+                "chunk_id": self.chunk_id,
+                "chunk_start": self.chunk_start,
+                "chunk_end": self.chunk_end
+            })
+        return json_data
 
     def get_text(self):
         cached_obj = self.rid.cache.read()
@@ -200,8 +213,8 @@ class EmbeddableObject:
             rid_fragment_str
         ]
 
-        resp = pinecone_index.fetch(potential_ids)
-        vectors = resp.to_dict()["vectors"]
+        result = pinecone_index.fetch(potential_ids)
+        vectors = result["vectors"]
 
         vector_ids = []
 
@@ -219,22 +232,21 @@ class EmbeddableObject:
         else:
             return vector_ids
 
-
     def read(self):
         vector_ids, vectors = self.get_vector_ids(return_vectors=True)
 
         if len(vector_ids) == 1:
             vector_id = vector_ids[0]
             return [
-                VectorObject(self.rid, vectors[vector_id])
+                VectorObject(vectors[vector_id])
             ]
         
         elif len(vector_ids) > 1:
-            resp = pinecone_index.fetch(vector_ids)
-            chunk_vectors = resp.to_dict()["vectors"]
+            result = pinecone_index.fetch(vector_ids)
+            chunk_vectors = result["vectors"]
 
             return [
-                VectorObject(self.rid, chunk_vectors[vector_id])
+                VectorObject(chunk_vectors[vector_id])
                 for vector_id in vector_ids
             ]
 
@@ -245,66 +257,24 @@ class EmbeddableObject:
         return pinecone_index.delete(self.get_vector_ids())
 
 
-def query_ids(text):
-    query_embedding = voyageai_client.embed(
-        texts=[text],
-        model=VOYAGEAI_MODEL,
-        input_type="query",
-    ).embeddings
-
+def query(text):
     result = pinecone_index.query(
-        vector=query_embedding, 
+        vector=voyageai_client.embed(
+            texts=[text],
+            model=VOYAGEAI_MODEL,
+            input_type="query"
+        ).embeddings,
         filter={
             "character_length": {"$gt": 200}
         },
-        top_k=7, 
+        top_k=10,
         include_metadata=True
     )
+    vectors = result["matches"]
 
-    return [(m["id"], m["score"], m["metadata"]) for m in result["matches"]]
-
-def query(text):
-    docs = []
-    for id, score, metadata in query_ids(text):
-        components = id.rsplit("#", 1)
-        if len(components) == 1:
-            rid_str, = components
-            chunk_str = None
-        else:
-            rid_str, chunk_str = components
-
-        rid = RID.from_string(rid_str)
-
-        cached_obj = rid.cache.read()
-        if cached_obj.empty:
-            print(f"{rid} retrieved from vectorstore, but cache not found")
-            continue
-
-        text = cached_obj.json_data["text"]
-
-        if chunk_str:
-            chunk_id = int(chunk_str.split(":")[1])
-            start = int(metadata["chunk_start"])
-            end = int(metadata["chunk_end"])
-            print(f"slicing rid {rid} chunk {chunk_id} at {start}:{end}")
-            text = text[start:end]
-
-        docs.append([rid, text, chunk_id])
-    return docs
-
+    return [
+        VectorObject(v) for v in vectors
+    ]
 
 def drop():
-    pinecone_index.delete(list(pinecone_index.list()))
-
-def scrub():
-    rids = []
-    for ids in pinecone_index.list():
-        rids.extend([RID.from_string(id) for id in ids])
-
-    to_delete = []
-    for rid in rids:
-        if not rid.cache.read().json_data:
-            print(rid)
-            to_delete.append(str(rid))
-    
-    pinecone_index.delete(to_delete)
+    pinecone_index.delete(delete_all=True)

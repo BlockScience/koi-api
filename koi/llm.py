@@ -32,26 +32,12 @@ def continue_conversation(conversation_id, query):
         start_conversation(conversation_id)
     conversation = conversations.get(conversation_id)
 
-    documents = vectorstore.query(query)
-    knowledge = [
-        {
-            "id": document[0] + 1,
-            "rid": str(document[1]),
-            "text": document[2],
-            "chunk": document[3]
-        } for document in 
-            zip(
-                range(len(documents)),
-                *zip(*documents)
-            )
-    ]
+    vectors = vectorstore._query(query)
 
     knowledge_text = "\n".join([
-        f"Knowledge Object [{o['id']}] {o['rid']}\n{o['text']}\n"
-        for o in knowledge
+        f"Knowledge Object [{n}] {v.rid}\n{v.get_text()}\n"
+        for n, v in enumerate(vectors)
     ])
-
-    # knowledge += "Footnotes:\n" + footnote_table
 
     response = client.chat.completions.create(
         model="gpt-4o",
@@ -61,28 +47,23 @@ def continue_conversation(conversation_id, query):
         }]
     )
 
-    # not including knowledge in conversation history, only active query
+    # not including knowledge text in conversation history, only active query
     conversation.append({
         "role": "user",
         "content": query,
-        "knowledge": knowledge
+        "knowledge": [v.to_dict() for v in vectors]
     })
 
     bot_message = response.choices[0].message.content
 
     footnote_table = ""
-    for doc in knowledge:
-        rid = doc["rid"]
-        n = doc["id"]
-
-        line = f"{n}: <{rid}>"
-        if f"[{n}]" not in bot_message:
-            cited = False
-            line = f"~{line}~"
-        else:
-            cited = True
-        conversation[-1]["knowledge"][n-1]["cited"] = cited
+    for n, vector in enumerate(vectors):
+        line = f"{n+1}: <{vector.rid}>"
+        cited = f"[{n+1}]" in bot_message
+        if not cited: line += " (unused)"
         footnote_table += line + "\n"
+
+        conversation[-1]["knowledge"][n]["cited"] = cited
     
     conversation.append({
         "role": "assistant",
