@@ -111,9 +111,13 @@ class CacheInterface:
     def delete(self):
         try:
             os.remove(self.file_path)
+            shutil.rmtree(self.directory_path)
         except FileNotFoundError:
             return
 
     @staticmethod
     def drop():
-        shutil.rmtree(CACHE_DIRECTORY)
+        try:
+            shutil.rmtree(CACHE_DIRECTORY)
+        except FileNotFoundError:
+            return

@@ -52,3 +52,15 @@ class GraphKnowledgeObject:
             return record is not None
         
         return execute_delete()
+    
+    @staticmethod
+    def drop():
+        @driver.execute_write
+        def execute_drop(tx: ManagedTransaction):
+            DROP_DATABASE = """//cypher
+                MATCH (n) DETACH DELETE n
+                """
+            
+            record = tx.run(DROP_DATABASE)
+        
+        return execute_drop()
