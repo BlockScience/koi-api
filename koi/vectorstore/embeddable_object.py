@@ -1,110 +1,18 @@
-import voyageai
-from pinecone import Pinecone, ServerlessSpec
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from rid_lib.core import RID
 
-from .config import (
-    VOYAGEAI_API_KEY, 
-    PINECONE_API_KEY, 
-    PINECONE_CLOUD_PROVIDER,
-    PINECONE_CLOUD_REGION,
-    PINECONE_INDEX_NAME,
-    PINECONE_INDEX_METRIC,
+from koi.config import (
     PINECONE_BATCH_SIZE,
-    EMBEDDINGS_DIMENSION, 
-    VOYAGEAI_MODEL, 
     VOYAGEAI_BATCH_SIZE,
     CHUNK_SIZE,
     CHUNK_OVERLAP
 )
+from .base import pinecone_index, voyage_embed_texts
+from .vector_object import VectorObject
 
-
-voyageai_client = voyageai.Client(api_key=VOYAGEAI_API_KEY)
-pinecone_client = Pinecone(api_key=PINECONE_API_KEY)
-
-if PINECONE_INDEX_NAME not in pinecone_client.list_indexes().names():
-    pinecone_client.create_index(
-        name=PINECONE_INDEX_NAME,
-        dimension=EMBEDDINGS_DIMENSION,
-        spec=ServerlessSpec(
-            cloud=PINECONE_CLOUD_PROVIDER,
-            region=PINECONE_CLOUD_REGION
-        ),
-        metric=PINECONE_INDEX_METRIC
-    )
-
-pinecone_index = pinecone_client.Index(PINECONE_INDEX_NAME)
-
-
-def chunkify_text(text):
-    chunks = []
-    if len(text) > CHUNK_SIZE:
-        start = 0
-        end = CHUNK_SIZE
-        while start < len(text):
-            chunks.append({
-                "text": text[start:end],
-                "start": start,
-                "end": end
-            })
-            start += (CHUNK_SIZE - CHUNK_OVERLAP)
-            end = start + CHUNK_SIZE
-    else:
-        chunks.append({
-            "text": text
-        })
-    
-    return chunks
 
 def create_rid_fragment_string(rid, chunk_id):
     return f"{rid}#chunk:{chunk_id}"
-
-
-class VectorObject:
-    def __init__(
-            self,
-            vector: dict
-        ):
-
-        self.id = vector.get("id")
-        self.metadata = vector.get("metadata")
-        self.values = vector.get("values")
-        self.score = vector.get("score")
-        self.rid = RID.from_string(self.metadata["rid"])
-        self.is_chunk = "chunk_id" in self.metadata
-
-        if self.is_chunk:
-            self.chunk_id = int(vector["metadata"]["chunk_id"])
-            self.chunk_start = int(self.metadata["chunk_start"])
-            self.chunk_end = int(self.metadata["chunk_end"])
-
-    def to_dict(self):
-        json_data = {
-            "id": self.id, 
-            "rid": str(self.rid),
-            "score": self.score,
-            "metadata": self.metadata,
-            "text": self.get_text(),
-            "is_chunk": self.is_chunk,
-        }
-# 
-        if self.is_chunk:
-            json_data.update({
-                "chunk_id": self.chunk_id,
-                "chunk_start": self.chunk_start,
-                "chunk_end": self.chunk_end
-            })
-        return json_data
-
-    def get_text(self):
-        cached_obj = self.rid.cache.read()
-        text = cached_obj.json_data.get("text")
-        if not text: return
-
-        if self.is_chunk:
-            return text[self.chunk_start:self.chunk_end]
-        else:
-            return text
 
 
 class EmbeddableObject:
@@ -182,13 +90,7 @@ class EmbeddableObject:
         while len(embeddings) < len(cls.embedding_queue):
             start = len(embeddings)
             end = min(start + VOYAGEAI_BATCH_SIZE, len(cls.embedding_queue))
-            embeddings.extend(
-                voyageai_client.embed(
-                    texts=texts[start:end],
-                    model=VOYAGEAI_MODEL,
-                    input_type="document"
-                ).embeddings
-            )
+            embeddings.extend(voyage_embed_texts(texts[start:end]))
             print(f"created embeddings for {end} objects")
 
         print(f"resulting in {len(embeddings)} embeddings")
@@ -255,26 +157,3 @@ class EmbeddableObject:
 
     def delete(self):
         return pinecone_index.delete(self.get_vector_ids())
-
-
-def query(text):
-    result = pinecone_index.query(
-        vector=voyageai_client.embed(
-            texts=[text],
-            model=VOYAGEAI_MODEL,
-            input_type="query"
-        ).embeddings,
-        filter={
-            "character_length": {"$gt": 200}
-        },
-        top_k=10,
-        include_metadata=True
-    )
-    vectors = result["matches"]
-
-    return [
-        VectorObject(v) for v in vectors
-    ]
-
-def drop():
-    pinecone_index.delete(delete_all=True)

@@ -32,7 +32,7 @@ def continue_conversation(conversation_id, query):
         start_conversation(conversation_id)
     conversation = conversations.get(conversation_id)
 
-    vectors = vectorstore._query(query)
+    vectors = vectorstore.query(query)
 
     knowledge_text = "\n".join([
         f"Knowledge Object [{n}] {v.rid}\n{v.get_text()}\n"
