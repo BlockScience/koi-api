@@ -19,6 +19,7 @@ from koi.vectorstore import VectorInterface
 
 RIDTypes = InternalLink | InternalSet | SlackChannel | SlackFile | SlackMessage | SlackMessage | SlackUser | SlackWorkspace | SubstackPublication | SubstackPost
 
+
 class RID:
     space: str
     format: str
@@ -45,6 +46,8 @@ class RID:
     def params(self) -> dict: ...
 
     def dereference(self) -> DataObject: ...
+
+    def purge(self) -> None: ...
 
 
 class DataObject:

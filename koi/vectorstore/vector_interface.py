@@ -152,8 +152,12 @@ class VectorInterface:
             return []
         
     def delete(self):
-        return pinecone_index.delete(self.get_vector_ids())
-    
+        vector_ids = self.get_vector_ids()
+        if vector_ids:
+            return pinecone_index.delete(self.get_vector_ids())
+        else:
+            return {}
+
     @staticmethod
     def create_rid_fragment_string(rid, chunk_id):
         return f"{rid}#chunk:{chunk_id}"

@@ -1,4 +1,4 @@
-import os, json, time
+import os, json, time, shutil
 from typing import Optional
 
 from rid_lib.core import RID, DataObject
@@ -109,4 +109,11 @@ class CacheInterface:
             return None
 
     def delete(self):
-        os.remove(self.file_path)
+        try:
+            os.remove(self.file_path)
+        except FileNotFoundError:
+            return
+
+    @staticmethod
+    def drop():
+        shutil.rmtree(CACHE_DIRECTORY)

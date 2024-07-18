@@ -9,6 +9,7 @@ from .vectorstore import VectorInterface
 def purge(self: RID):
     self.graph.delete()
     self.cache.delete()
+    self.vector.delete()
 
 def extended_rid_post_init(self):
     if isinstance(self, InternalSet):
@@ -21,7 +22,6 @@ def extended_rid_post_init(self):
     self.cache = CacheInterface(self)
     self.vector = VectorInterface(self)
 
-    self.purge = purge
-
 def patch_rid():
     RID.__post_init__ = extended_rid_post_init
+    RID.purge = purge
