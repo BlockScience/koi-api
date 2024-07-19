@@ -5,7 +5,7 @@ from rid_lib.core import RID, DataObject
 
 from koi.config import CACHE_DIRECTORY
 from koi import utils
-from .cache_object import CacheObject
+from .object_model import CacheObject
 
 
 class CacheInterface:

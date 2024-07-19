@@ -7,8 +7,8 @@ from koi.config import (
     CHUNK_SIZE,
     CHUNK_OVERLAP
 )
-from .base import pinecone_index, voyage_embed_texts
-from .vector_object import VectorObject
+from .connectors import pinecone_index, voyage_embed_texts
+from .object_model import VectorObject
 
 
 class VectorInterface:

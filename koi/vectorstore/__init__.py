@@ -1,2 +1,2 @@
-from .vector_interface import VectorInterface
-from .vector_object import VectorObject
+from .interface import VectorInterface
+from .object_model import VectorObject

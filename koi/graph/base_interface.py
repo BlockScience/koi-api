@@ -4,7 +4,7 @@ from neo4j import ManagedTransaction
 from . import driver
 
 
-class GraphKnowledgeObject:
+class GraphBaseInterface:
     def __init__(self, rid: RID):
         self.rid = rid
     

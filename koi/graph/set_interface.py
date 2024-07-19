@@ -2,10 +2,10 @@ from neo4j import ManagedTransaction
 from rid_lib.core import RID
 
 from . import driver
-from .knowledge_object import GraphKnowledgeObject
+from .base_interface import GraphBaseInterface
 
 
-class GraphSetObject(GraphKnowledgeObject):
+class GraphSetInterface(GraphBaseInterface):
     def create(self, members):
         @driver.execute_write
         def execute_create(tx: ManagedTransaction, members):

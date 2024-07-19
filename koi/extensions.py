@@ -1,7 +1,7 @@
 from rid_lib.core import RID
 from rid_lib.types import InternalLink, InternalSet
 
-from .graph import GraphKnowledgeObject, GraphSetObject, GraphLinkObject
+from .graph import GraphBaseInterface, GraphSetInterface, GraphLinkInterface
 from .cache import CacheInterface
 from .vectorstore import VectorInterface
 
@@ -13,11 +13,11 @@ def purge(self: RID):
 
 def extended_rid_post_init(self):
     if isinstance(self, InternalSet):
-        self.graph = GraphSetObject(self)
+        self.graph = GraphSetInterface(self)
     elif isinstance(self, InternalLink):
-        self.graph = GraphLinkObject(self)
+        self.graph = GraphLinkInterface(self)
     else:
-        self.graph = GraphKnowledgeObject(self)
+        self.graph = GraphBaseInterface(self)
 
     self.cache = CacheInterface(self)
     self.vector = VectorInterface(self)

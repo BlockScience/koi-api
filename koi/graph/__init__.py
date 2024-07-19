@@ -1,3 +1,3 @@
-from .knowledge_object import GraphKnowledgeObject
-from .set import GraphSetObject
-from .link import GraphLinkObject
+from .base_interface import GraphBaseInterface
+from .set_interface import GraphSetInterface
+from .link_interface import GraphLinkInterface

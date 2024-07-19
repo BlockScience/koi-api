@@ -1,9 +1,9 @@
 from neo4j import ManagedTransaction
 
 from . import driver
-from .knowledge_object import GraphKnowledgeObject
+from .base_interface import GraphBaseInterface
 
-class GraphLinkObject(GraphKnowledgeObject):
+class GraphLinkInterface(GraphBaseInterface):
     def create(self, source, target, tag):
         @driver.execute_write
         def execute_create(tx: ManagedTransaction, source, target, tag):

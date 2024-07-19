@@ -1,2 +1,2 @@
-from .cache_interface import CacheInterface
-from .cache_object import CacheObject
+from .interface import CacheInterface
+from .object_model import CacheObject
