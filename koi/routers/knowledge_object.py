@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 import nanoid
 from rid_lib.core import DataObject
-from rid_lib.spaces.internal import InternalLink, InternalSet
+from rid_lib.spaces.koi import KoiLink, KoiSet
 
 from koi.exceptions import ResourceNotFoundError
 from koi.validators import RIDField
@@ -101,7 +101,7 @@ def read_object_link(obj_link: ReadObjectLink):
         "target_rid": str(target)
     }
     
-    if isinstance(target, InternalSet):
+    if isinstance(target, KoiSet):
         members = target.graph.read()
         result["members"] = members
     
@@ -121,9 +121,9 @@ def merge_linked_set(linked_set: MergeLinkedSet):
     target = rid.graph.read_link(linked_set.tag)
     
     if not target:
-        set_rid = InternalSet(nanoid.generate())
+        set_rid = KoiSet(nanoid.generate())
         members = set_rid.graph.create(linked_set.members)
-        link_rid = InternalLink(rid, set_rid, linked_set.tag)
+        link_rid = KoiLink(rid, set_rid, linked_set.tag)
         link_rid.graph.create(
             source=rid,
             target=set_rid,

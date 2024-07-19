@@ -1,7 +1,7 @@
 from rid_lib.core import RID, DataObject
-from .base import InternalSpace
+from .base import KoiSpace
 
-class InternalSet(InternalSpace):
+class KoiSet(KoiSpace):
     format = "set"
 
     def __init__(self, reference):
@@ -14,4 +14,4 @@ class InternalSet(InternalSpace):
     def dereference(self):
         return DataObject()
     
-RID._add_type(InternalSet)
+RID._add_type(KoiSet)

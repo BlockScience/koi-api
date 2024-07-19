@@ -1,3 +1,3 @@
 from .spaces.slack import *
-from .spaces.internal import *
+from .spaces.koi import *
 from .spaces.substack import *

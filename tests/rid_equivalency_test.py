@@ -1,4 +1,4 @@
-from rid_lib import *
+from rid_lib.types import SlackMessage
 
 msg1_url = SlackMessage.from_url("https://metagov.slack.com/archives/C06LAQNLVNK/p1718185155982379?thread_ts=1718183944.560199&cid=C06LAQNLVNK")
 msg1_params = SlackMessage("TMQ3PKXT9", "C06LAQNLVNK", "1718185155.982379", "1718183944.560199")

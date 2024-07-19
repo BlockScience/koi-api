@@ -1,5 +1,5 @@
 from rid_lib.core import RID
-from rid_lib.types import InternalLink, InternalSet
+from rid_lib.types import KoiLink, KoiSet
 
 from .graph import GraphBaseInterface, GraphSetInterface, GraphLinkInterface
 from .cache import CacheInterface
@@ -12,9 +12,9 @@ def purge(self: RID):
     self.vector.delete()
 
 def extended_rid_post_init(self):
-    if isinstance(self, InternalSet):
+    if isinstance(self, KoiSet):
         self.graph = GraphSetInterface(self)
-    elif isinstance(self, InternalLink):
+    elif isinstance(self, KoiLink):
         self.graph = GraphLinkInterface(self)
     else:
         self.graph = GraphBaseInterface(self)

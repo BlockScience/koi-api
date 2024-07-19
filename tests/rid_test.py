@@ -1,4 +1,4 @@
-from rid_lib.spaces.internal import InternalLink
+from rid_lib.spaces.koi import KoiLink
 from rid_lib.spaces.slack import *
 
 msg1 = SlackMessage.from_url("https://metagov.slack.com/archives/C06DMGNV7E0/p1718871472001789")
@@ -18,7 +18,7 @@ workspace = SlackWorkspace("TMQ3PKXT9")
 print(workspace)
 print(workspace.dereference())
 
-link = InternalLink(msg1, channel, "are_friends")
+link = KoiLink(msg1, channel, "are_friends")
 print(link)
-link2 = InternalLink.from_reference("are_friends+5c5280f83d61645fb1539811f2daf0816444114f3e01ba42f45ccffcffba05e9")
+link2 = KoiLink.from_reference("are_friends+5c5280f83d61645fb1539811f2daf0816444114f3e01ba42f45ccffcffba05e9")
 print(link2)

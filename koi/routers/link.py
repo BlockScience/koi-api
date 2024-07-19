@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status, HTTPException
 from pydantic import BaseModel
-from rid_lib.spaces.internal import InternalLink
+from rid_lib.spaces.koi import KoiLink
 
 from koi.exceptions import ResourceNotFoundError
 from koi.validators import RIDField
@@ -24,7 +24,7 @@ def create_link(link_obj: CreateLink):
             detail=f"Self links are not allowed, source and target must be different"
         )
 
-    rid = InternalLink(link_obj.source, link_obj.target, link_obj.tag)
+    rid = KoiLink(link_obj.source, link_obj.target, link_obj.tag)
     success = rid.graph.create(
         source=link_obj.source,
         target=link_obj.target,

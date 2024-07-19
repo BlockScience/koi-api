@@ -3,7 +3,7 @@ from typing import List, Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
 import nanoid
-from rid_lib.spaces.internal import InternalSet
+from rid_lib.spaces.koi import KoiSet
 
 from koi.exceptions import ResourceNotFoundError
 from koi.validators import RIDField
@@ -19,7 +19,7 @@ class CreateSet(BaseModel):
 
 @router.post("")
 def create_set(set_obj: CreateSet):
-    rid = InternalSet(nanoid.generate())
+    rid = KoiSet(nanoid.generate())
     members = rid.graph.create(rid, set_obj.members)
 
     return {

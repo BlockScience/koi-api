@@ -3,17 +3,22 @@ import hashlib
 from typing import Union
 
 from rid_lib.core import RID, DataObject
-from .base import InternalSpace
+from .base import KoiSpace
 
-class InternalLink(InternalSpace):
+class KoiLink(KoiSpace):
     format = "link"
 
-    def __init__(self, source: Union[RID, str] = None, target: Union[RID, str] = None, tag: str = None, reference: str = None):
-
-        if reference is not None:
+    def __init__(
+        self, 
+        source: Union[RID, str] = None,
+        target: Union[RID, str] = None,
+        tag: str = None, 
+        reference: str = None
+    ):
+        if reference:
             self.reference = reference
 
-        elif source is not None and target is not None and tag is not None:
+        elif source and target and tag:
 
             link_json = {
                 "source": str(source),
@@ -37,4 +42,4 @@ class InternalLink(InternalSpace):
     def dereference(self):
         return DataObject()
 
-RID._add_type(InternalLink)
+RID._add_type(KoiLink)

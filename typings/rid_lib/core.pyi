@@ -1,8 +1,8 @@
 from typing import Union, Optional
 
 from rid_lib.types import (
-    InternalLink,
-    InternalSet,
+    KoiLink,
+    KoiSet,
     SlackChannel,
     SlackFile,
     SlackMessage,
@@ -12,12 +12,12 @@ from rid_lib.types import (
     SubstackPost
 )
 
-from koi.graph import GraphKnowledgeObject, GraphLinkObject, GraphSetObject
+from koi.graph import GraphBaseInterface, GraphLinkInterface, GraphSetInterface
 from koi.cache import CacheInterface
 from koi.vectorstore import VectorInterface
 
 
-RIDTypes = InternalLink | InternalSet | SlackChannel | SlackFile | SlackMessage | SlackMessage | SlackUser | SlackWorkspace | SubstackPublication | SubstackPost
+RIDTypes = KoiLink | KoiSet | SlackChannel | SlackFile | SlackMessage | SlackMessage | SlackUser | SlackWorkspace | SubstackPublication | SubstackPost
 
 
 class RID:
@@ -27,7 +27,7 @@ class RID:
     def __init__(self) -> None:
         self.reference: str
 
-        self.graph: Union[GraphKnowledgeObject, GraphLinkObject, GraphSetObject]
+        self.graph: Union[GraphBaseInterface, GraphLinkInterface, GraphSetInterface]
         self.cache: CacheInterface
         self.vector: VectorInterface
 
