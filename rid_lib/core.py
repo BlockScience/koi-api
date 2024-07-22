@@ -63,7 +63,7 @@ class RID(metaclass=PostInitCaller):
         def dereference(self) -> DataObject: ...
 
     In addition to the basic magic methods defined (__str__, __repr__,
-    __eq__, __hash___), the following properties are defined:
+    __eq__, __hash__), the following properties are defined:
 
         means: str
         params: dict
