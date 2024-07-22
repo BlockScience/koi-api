@@ -1,6 +1,7 @@
-from typing import Optional
+from dataclasses import dataclass, field
 
 
+@dataclass
 class CacheObject:
     """
     A container object for the cached data associated with an RID. It is returned by the read and write functions of a CacheableObject. It provides slightly more flexibility than a raw JSON object, which is the format that the underlying data is actually stored in.
@@ -18,23 +19,19 @@ class CacheObject:
     }
     """
 
-    def __init__(
-            self, 
-            metadata: Optional[dict] = None,
-            json_data: Optional[dict] = None
-        ):
-        
-        self.metadata = metadata
-        self.json_data = json_data
+    metadata: dict | None = None
+    json_data: dict | None = None
+    files: dict = field(init=False)
+
+    def __post_init__(self):
         self.files = []
 
         if self.metadata:
             for file in self.metadata.get("files", []):
                 self.files.append(file)
-    
-    @property
-    def empty(self):
-        return self.metadata is None and self.json_data is None
+
+    def __bool__(self):
+        return bool(self.metadata) or bool(self.json_data)
 
     @classmethod
     def from_dict(cls, json_object):

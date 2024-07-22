@@ -58,9 +58,6 @@ class CacheInterface:
 
         if not data_object:
             return CacheObject()
-        
-        if data_object.empty:
-            return CacheObject()
 
         if data_object.files:
             if not os.path.exists(self.directory_path):

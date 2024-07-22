@@ -26,8 +26,8 @@ def create_object(knowledge_obj: CreateObject):
     data_object = DataObject(json_data=knowledge_obj.data)
 
     cached_object = rid.cache.read()
-    if cached_object.empty or knowledge_obj.overwrite:
-        if not data_object.empty:
+    if cached_object or knowledge_obj.overwrite:
+        if data_object:
             print("writing cache with provided data")
             cached_object = rid.cache.write(data_object)
 

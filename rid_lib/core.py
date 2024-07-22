@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Optional, Union
+from dataclasses import dataclass
 
 from .exceptions import *
 
@@ -295,23 +295,27 @@ class RID(metaclass=PostInitCaller):
     def dereference(self):
         ...
 
-
+@dataclass
 class DataObject:
-    def __init__(
-            self, 
-            json_data: Optional[dict] = None, 
-            files: Optional[dict[str, Union[bytes, str]]] = None
-        ):
-        
-        self.json_data = json_data
-        self.files = files
+    """Container storing data returned from RID dereference functions.
 
-    @property
-    def empty(self):
-        return self.json_data is None and not self.files
+    Two optional fields for storing JSON and file data. File data should
+    be formatted like this:
+
+        {
+            "file_name1": "text string",
+            "file_name2": bytes()
+        }
     
-    @property
-    def merged_json(self):
+    """
+
+    json_data: dict | None = None
+    files: dict[str, bytes | str] | None = None
+
+    def __bool__(self) -> bool:
+        return bool(self.json_data) or bool(self.files)
+    
+    def to_dict(self) -> dict:
         return {
             "json_data": self.json_data,
             "files": self.files
