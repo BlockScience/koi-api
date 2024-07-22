@@ -25,7 +25,10 @@ class SlackChannel(SlackSpace):
         components = reference.split("/")
         if len(components) == 2:
             return cls(*components)
-        raise InvalidReferenceFormatError(f"SlackChannel RIDs must be in the following format: 'slack.channel:<workspace_id>/<channel_id>'")
+        raise InvalidReferenceFormatError(
+            f"SlackChannel RIDs must be in the following format: "
+            "'slack.channel:<workspace_id>/<channel_id>'"
+        )
         
     @classmethod
     def from_url(cls, slack_url):
@@ -35,12 +38,15 @@ class SlackChannel(SlackSpace):
         workspace_id = cls._domain_workspace_table.get(domain)
 
         if not workspace_id:
-            raise Exception(f"SlackChannel cannot be created from url, domain '{domain}' not found in domain workspace table")
+            raise Exception(
+                f"SlackChannel cannot be created from url, domain '{domain}' "
+                "not found in domain workspace table")
         
         return cls(workspace_id, channel_id)
         
     def dereference(self):
-        channel_data = self.app.client.conversations_info(channel=self.channel_id)["channel"]
+        channel_data = self.app.client.conversations_info(
+            channel=self.channel_id)["channel"]
         return DataObject(
             json_data=channel_data
         )

@@ -4,9 +4,10 @@ from dataclasses import dataclass, field
 @dataclass
 class CacheObject:
     """
-    A container object for the cached data associated with an RID. It is returned by the read and write functions of a CacheableObject. It provides slightly more flexibility than a raw JSON object, which is the format that the underlying data is actually stored in.
-
-    NOTE: can this just be simplified to a dict? provides support for accessing files
+    A container object for the cached data associated with an RID. It is 
+    returned by the read and write functions of a CacheableObject. It 
+    provides slightly more flexibility than a raw JSON object, which is 
+    the format that the underlying data is actually stored in.
 
     JSON format: 
     {

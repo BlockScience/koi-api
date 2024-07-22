@@ -1,6 +1,5 @@
 import json
 import hashlib
-from typing import Union
 
 from rid_lib.core import RID, DataObject
 from .base import KoiSpace
@@ -10,8 +9,8 @@ class KoiLink(KoiSpace):
 
     def __init__(
         self, 
-        source: Union[RID, str] = None,
-        target: Union[RID, str] = None,
+        source: RID | str | None = None,
+        target: RID | str | None = None,
         tag: str = None, 
         reference: str = None
     ):
@@ -33,7 +32,9 @@ class KoiLink(KoiSpace):
             self.reference = f"{tag}+{link_hash}"
         
         else:
-            raise TypeError("InternalLink must be instantiated with a reference or a source, target, and tag")
+            raise TypeError(
+                "InternalLink must be instantiated with a reference or a "
+                "source, target, and tag")
 
     @classmethod
     def from_reference(cls, reference):

@@ -10,7 +10,8 @@ class SlackFile(SlackSpace):
 
     @property
     def url(self):
-        return f"https://files.slack.com/files-pri/{self.workspace_id}-{self.file_id}/{self.file_name}"
+        return ("https://files.slack.com/files-pri/"
+                f"{self.workspace_id}-{self.file_id}/{self.file_name}")
     
     def __init__(self, workspace_id: str, file_id: str):
         super().__init__()
@@ -25,7 +26,9 @@ class SlackFile(SlackSpace):
         components = reference.split("/")
         if len(components) == 2:
             return cls(*components)
-        raise InvalidReferenceFormatError(f"SlackFile RIDs must be in the following format: 'slack.file:<workspace_id>/<file_id>'")
+        raise InvalidReferenceFormatError(
+            f"SlackFile RIDs must be in the following format: "
+            "'slack.file:<workspace_id>/<file_id>'")
     
     def dereference(self):
         file_data = self.app.client.files_info(

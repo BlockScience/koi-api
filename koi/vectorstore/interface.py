@@ -21,7 +21,8 @@ class VectorInterface:
     def embed(self, flush_queue=False):
         cached_object = self.rid.cache.read()
 
-        if cached_object.json_data is None or "text" not in cached_object.json_data:
+        if (cached_object.json_data is None or
+            "text" not in cached_object.json_data):
             print("cache empty or missing text field, can't embed")
             return False
         
@@ -102,7 +103,11 @@ class VectorInterface:
 
     def get_vector_ids(self, return_vectors=False):
         """
-        If the RID is not chunked, it will have one vector where the id is its RID. If the RID is chunked, its id will take the form '{RID}#chunk:{id}'. It will test both possible starting ids to determine whether the RID is chunked, and find the other ids if it is.
+        If the RID is not chunked, it will have one vector where the id 
+        is its RID. If the RID is chunked, its id will take the form 
+        '{RID}#chunk:{id}'. It will test both possible starting ids to 
+        determine whether the RID is chunked, and find the other ids if 
+        it is.
         """
 
         rid_fragment_str = self.create_rid_fragment_string(self.rid, 0)

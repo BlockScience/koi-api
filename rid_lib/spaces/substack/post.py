@@ -21,7 +21,9 @@ class SubstackPost(SubstackSpace):
         if len(components) == 2:
             return cls(*components)
         else:
-            raise InvalidReferenceFormatError("SubstackPost RIDs must be in the following format: 'substack.post:<subdomain>/<slug>'")
+            raise InvalidReferenceFormatError(
+                "SubstackPost RIDs must be in the following format: "
+                "'substack.post:<subdomain>/<slug>'")
         
     def dereference(self):
         url = f"https://{self.subdomain}.substack.com/api/v1/posts/{self.slug}"

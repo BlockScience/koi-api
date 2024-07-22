@@ -1,5 +1,4 @@
 import os, json, time, shutil
-from typing import Optional
 
 from rid_lib.core import RID, DataObject
 
@@ -10,7 +9,9 @@ from .object_model import CacheObject
 
 class CacheInterface:
     """
-    Interface to the cache of an RID. A CacheInterface is automatically generated and bound to all RID objects in extensions.py as the 'cache' property. 
+    Interface to the cache of an RID. A CacheInterface is automatically 
+    generated and bound to all RID objects in extensions.py as the 
+    'cache' property. 
     
     For example:
         import koi
@@ -23,7 +24,10 @@ class CacheInterface:
         rid.cache.write(data_object)
         print(rid.cache.read().json())
 
-    Each RID can have a cache file, by default located in the 'cache/' directory, where the filename is the base64 encoding of the RID string + '.json'. Metadata is automatically generate when 'write' is called.
+    Each RID can have a cache file, by default located in the 'cache/' 
+    directory, where the filename is the base64 encoding of the RID 
+    string + '.json'. Metadata is automatically generate when 'write' is
+    called.
     """
 
     def __init__(self, rid: RID):
@@ -38,7 +42,11 @@ class CacheInterface:
     def directory_path(self):
         return f"{CACHE_DIRECTORY}/{self.encoded_rid}"
 
-    def write(self, data_object: Optional[DataObject] = None, from_dereference: bool = False) -> CacheObject:
+    def write(
+            self, 
+            data_object: DataObject | None = None,
+            from_dereference: bool = False
+        ) -> CacheObject:
         """
         Writes a DataObject to RID cache. Can write both JSON data and files.
 
@@ -51,7 +59,9 @@ class CacheInterface:
         if (data_object is not None and from_dereference is True) or \
             (data_object is None and from_dereference is False):
 
-            raise Exception("Call to cache write must pass in DataObject OR set from_dereference = True")
+            raise Exception(
+                "Call to cache write must pass in DataObject OR set "
+                "from_dereference = True")
 
         if from_dereference:
             data_object = self.rid.dereference()

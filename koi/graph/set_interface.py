@@ -18,9 +18,14 @@ class GraphSetInterface(GraphBaseInterface):
                 RETURN member.rid
                 """
             
-            member_records = tx.run(CREATE_SET, rid=str(self.rid), member_rids=members, params=self.rid.params)
-            members = [record["member.rid"] for record in member_records]
+            member_records = tx.run(
+                CREATE_SET, 
+                rid=str(self.rid), 
+                member_rids=members, 
+                params=self.rid.params
+            )
 
+            members = [record["member.rid"] for record in member_records]
             return members
         
         return execute_create(members)
@@ -37,7 +42,6 @@ class GraphSetInterface(GraphBaseInterface):
             record = tx.run(READ_SET, rid=str(self.rid)).single()
             if record:
                 return [RID.from_string(member) for member in record["members"]]
-            
         return execute_read()
 
     def update(self, add_members=[], remove_members=[]):
@@ -64,8 +68,16 @@ class GraphSetInterface(GraphBaseInterface):
                     RETURN member.rid
                     """
                 
-                added_member_records = tx.run(ADD_MEMBERS, rid=str(self.rid), member_rids=add_members)
-                added_members = [record["member.rid"] for record in added_member_records]
+                added_member_records = tx.run(
+                    ADD_MEMBERS, 
+                    rid=str(self.rid), 
+                    member_rids=add_members
+                )
+                
+                added_members = [
+                    record["member.rid"] 
+                    for record in added_member_records
+                ]
             
             if remove_members:
                 REMOVE_MEMBERS = """//cypher
@@ -76,9 +88,16 @@ class GraphSetInterface(GraphBaseInterface):
                     RETURN member.rid
                     """
                 
-                removed_member_records = tx.run(REMOVE_MEMBERS, rid=str(self.rid), member_rids=remove_members)
-                removed_members = [record["member.rid"] for record in removed_member_records]
+                removed_member_records = tx.run(
+                    REMOVE_MEMBERS, 
+                    rid=str(self.rid), 
+                    member_rids=remove_members
+                )
+                
+                removed_members = [
+                    record["member.rid"] 
+                    for record in removed_member_records
+                ]
 
             return added_members, removed_members
-        
         return execute_update(add_members, remove_members)

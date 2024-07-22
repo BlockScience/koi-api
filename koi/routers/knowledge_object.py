@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 from fastapi import APIRouter
 from pydantic import BaseModel
 import nanoid
@@ -14,10 +12,10 @@ router = APIRouter(tags=["Knowledge Object"])
 
 class CreateObject(BaseModel):
     rid: RIDField
-    data: Optional[dict] = None
-    use_dereference: Optional[bool] = True
-    overwrite: Optional[bool] = False
-    create_embedding: Optional[bool] = True
+    data: dict | None = None
+    use_dereference: bool = True
+    overwrite: bool = False
+    create_embedding: bool = True
 
 @router.post("/object")
 def create_object(knowledge_obj: CreateObject):
@@ -42,18 +40,24 @@ def create_object(knowledge_obj: CreateObject):
 
 
 class CreateObjects(BaseModel):
-    rids: dict[RIDField, Union[dict, None]]
-    use_dereference: Optional[bool] = True
-    overwrite: Optional[bool] = False
-    create_embedding: Optional[bool] = True
+    rids: dict[RIDField, dict | None]
+    use_dereference: bool = True
+    overwrite: bool = False
+    create_embedding: bool = True
 
 @router.post("/objects")
 def create_objects(knowledge_objs: CreateObjects):
     objects = {}
     for rid, data in knowledge_objs.rids.items():
-        objects[str(rid)] = create_object(CreateObject(
-            rid, data, knowledge_objs.use_dereference, knowledge_objs.overwrite, knowledge_objs.create_embedding
-        ))
+        objects[str(rid)] = create_object(
+            CreateObject(
+                rid, 
+                data, 
+                knowledge_objs.use_dereference, 
+                knowledge_objs.overwrite, 
+                knowledge_objs.create_embedding
+            )
+        )
 
     return objects
 
@@ -94,7 +98,8 @@ def read_object_link(obj_link: ReadObjectLink):
     target = rid.graph.read_link(obj_link.tag)
 
     if not target:
-        raise ResourceNotFoundError(rid, detail=f"{rid} has no link with tag '{obj_link.tag}'")
+        raise ResourceNotFoundError(
+            rid, detail=f"{rid} has no link with tag '{obj_link.tag}'")
     
     result = {
         "rid": str(rid),

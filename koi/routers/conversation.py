@@ -1,5 +1,3 @@
-from typing import Optional
-
 from fastapi import APIRouter
 from pydantic import BaseModel
 
@@ -12,7 +10,7 @@ router = APIRouter(
 )
 
 class CreateConversation(BaseModel):
-    conversation_id: Optional[str] = None
+    conversation_id: str | None = None
 
 @router.post("")
 def create_conversation(obj: CreateConversation):

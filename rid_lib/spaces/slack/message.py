@@ -1,4 +1,3 @@
-from typing import Optional
 from urllib.parse import urlparse, parse_qs
 
 from rid_lib.core import RID, DataObject
@@ -16,9 +15,16 @@ class SlackMessage(SlackSpace):
     @property
     def url(self):
         url_message_id = "p" + self.message_id.replace(".", "")
-        return f"https://{self.default_domain}.slack.com/archives/{self.channel_id}/{url_message_id}"
+        return (f"https://{self.default_domain}.slack.com/archives/"
+                f"{self.channel_id}/{url_message_id}")
 
-    def __init__(self, workspace_id: str, channel_id: str, message_id: str, thread_id: Optional[str] = None):
+    def __init__(
+            self,
+            workspace_id: str,
+            channel_id: str,
+            message_id: str,
+            thread_id: str | None = None
+        ):
         super().__init__()
 
         self.workspace_id = workspace_id
@@ -39,7 +45,10 @@ class SlackMessage(SlackSpace):
         if len(components) in (3, 4):
             return cls(*components)
         else:
-            raise InvalidReferenceFormatError("SlackMessage RIDs must be in one of the following formats: 'slack.message:<workspace_id>/<channel_id>/<message_id>', 'slack.message:<workspace_id>/<channel_id>/<message_id>/<thread_id>'")
+            raise InvalidReferenceFormatError(
+                "SlackMessage RIDs must be in one of the following formats: "
+                "'slack.message:<workspace_id>/<channel_id>/<message_id>', "
+                "'slack.message:<workspace_id>/<channel_id>/<message_id>/<thread_id>'")
         
     # need a better way of getting workspace_id from domain
     @classmethod
@@ -58,7 +67,9 @@ class SlackMessage(SlackSpace):
             thread_id = None
 
         if not workspace_id:
-            raise Exception(f"SlackMessage cannot be created from url, domain '{domain}' not found in domain workspace table")
+            raise Exception(
+                f"SlackMessage cannot be created from url, domain '{domain}' "
+                "not found in domain workspace table")
         
         return cls(workspace_id, channel_id, message_id, thread_id)
 

@@ -1,4 +1,6 @@
-from typing import Union, Optional
+"""Typing overrides for the koi library to add interface support."""
+
+from dataclasses import dataclass
 
 from rid_lib.types import (
     KoiLink,
@@ -17,7 +19,9 @@ from koi.cache import CacheInterface
 from koi.vectorstore import VectorInterface
 
 
-RIDTypes = KoiLink | KoiSet | SlackChannel | SlackFile | SlackMessage | SlackMessage | SlackUser | SlackWorkspace | SubstackPublication | SubstackPost
+RIDTypes = (KoiLink | KoiSet | SlackChannel | SlackFile | SlackMessage |
+            SlackMessage | SlackUser | SlackWorkspace | SubstackPublication | 
+            SubstackPost)
 
 
 class RID:
@@ -27,7 +31,7 @@ class RID:
     def __init__(self) -> None:
         self.reference: str
 
-        self.graph: Union[GraphBaseInterface, GraphLinkInterface, GraphSetInterface]
+        self.graph: GraphBaseInterface | GraphLinkInterface | GraphSetInterface
         self.cache: CacheInterface
         self.vector: VectorInterface
 
@@ -50,13 +54,9 @@ class RID:
     def purge(self) -> None: ...
 
 
+@dataclass
 class DataObject:
-    def __init__(self, json_data: Optional[dict] = None, files: Optional[dict[str, bytes | str]] = None) -> None:
-        self.json_data: Optional[dict]
-        self.files: Optional[dict[str, bytes | str]]
+    json_data: dict | None = None
+    files: dict[str, bytes | str] | None = None
 
-    @property
-    def empty(self) -> bool: ...
-
-    @property
-    def merged_json(self) -> dict: ...
+    def to_dict(self) -> dict: ...

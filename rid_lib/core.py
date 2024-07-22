@@ -223,36 +223,30 @@ class RID(metaclass=PostInitCaller):
         if len(rid_components) != 2:
             raise InvalidRidFormatError(
                 f"Error processing string '{rid_str}': missing RID delimiter"
-                f"'{RID.rid_delimiter}'"
-            )
+                f"'{RID.rid_delimiter}'")
 
         symbol, reference = rid_components
         if not symbol:
             raise InvalidRidFormatError(
-                f"Error processing string '{rid_str}': means is empty string"
-            )
+                f"Error processing string '{rid_str}': means is empty string")
         if not reference:
             raise InvalidRidFormatError(
-                f"Error processing string '{rid_str}': reference is empty string"
-            )
+                f"Error processing string '{rid_str}': reference is empty string")
 
         means_components = symbol.split(RID.means_delimiter)
         if len(means_components) != 2:
             raise InvalidRidFormatError(
                 f"Error processing string '{rid_str}': the means component"
                 f"'{symbol}' should contain exactly one means delimiter" 
-                f"'{RID.means_delimiter}'"
-            )
+                f"'{RID.means_delimiter}'")
         
         space, format = means_components
         if not space:
             raise InvalidRidFormatError(
-                f"Error processing string '{rid_str}': space is empty string"
-            )
+                f"Error processing string '{rid_str}': space is empty string")
         if not format:
             raise InvalidRidFormatError(
-                f"Error processing string '{rid_str}': format is empty string"
-            )
+                f"Error processing string '{rid_str}': format is empty string")
 
         Type = RID.table.get((space, format))
 

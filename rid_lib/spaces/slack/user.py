@@ -26,7 +26,9 @@ class SlackUser(SlackSpace):
         if len(components) == 2:
             return cls(*components)
         else:
-            raise InvalidReferenceFormatError(f"SlackUser RIDs must be in the following format: 'slack.user:<workspace_id>/<user_id>'")
+            raise InvalidReferenceFormatError(
+                f"SlackUser RIDs must be in the following format: "
+                "'slack.user:<workspace_id>/<user_id>'")
         
     @classmethod
     def from_url(cls, slack_url):
@@ -36,7 +38,9 @@ class SlackUser(SlackSpace):
         workspace_id = cls._domain_workspace_table.get(domain)
 
         if not workspace_id:
-            raise Exception(f"SlackUser cannot be created from url, domain '{domain}' not found in domain workspace table")
+            raise Exception(
+                f"SlackUser cannot be created from url, domain '{domain}' "
+                 "not found in domain workspace table")
         
         return cls(workspace_id, user_id)
     

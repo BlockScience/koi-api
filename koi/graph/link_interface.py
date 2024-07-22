@@ -20,7 +20,14 @@ class GraphLinkInterface(GraphBaseInterface):
                 "tag": tag
             }
 
-            record = tx.run(CREATE_LINK, rid=str(self.rid), params=params, source_rid=str(source), target_rid=str(target)).single()
+            record = tx.run(
+                CREATE_LINK, 
+                rid=str(self.rid), 
+                params=params, 
+                source_rid=str(source), 
+                target_rid=str(target)
+            ).single()
+            
             return record is not None
         
         return execute_create(source, target, tag)

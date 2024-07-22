@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from fastapi import APIRouter
 from pydantic import BaseModel
 import nanoid
@@ -15,7 +13,7 @@ router = APIRouter(
 )
 
 class CreateSet(BaseModel):
-    members: Optional[List[str]] = []
+    members: list[str] = []
 
 @router.post("")
 def create_set(set_obj: CreateSet):
@@ -47,8 +45,8 @@ def read_set(set_obj: ReadSet):
 
 class UpdateSet(BaseModel):
     rid: RIDField
-    add_members: Optional[List[str]] = []
-    remove_members: Optional[List[str]] = []
+    add_members: list[str] = []
+    remove_members: list[str] = []
 
 @router.put("")
 def update_set(set_obj: UpdateSet):
