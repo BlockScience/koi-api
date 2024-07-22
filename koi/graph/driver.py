@@ -18,6 +18,7 @@ except exceptions.ServiceUnavailable:
     quit()
 
 
+# Wrapper functions for performing Neo4j Cypher operations
 def execute_read(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):

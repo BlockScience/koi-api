@@ -8,8 +8,7 @@ from .object_model import CacheObject
 
 
 class CacheInterface:
-    """
-    Interface to the cache of an RID.
+    """Interface to the cache of an RID object.
     
     A CacheInterface is automatically generated and bound to all RID 
     objects as the 'cache' property (see extensions.py). It provides

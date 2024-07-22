@@ -4,7 +4,19 @@ from . import driver
 from .base_interface import GraphBaseInterface
 
 class GraphLinkInterface(GraphBaseInterface):
+    """Interface to graph representation a link RID object.
+
+    (see GraphBaseInterface for default behavior)
+
+    A link is an immutable directed edge between two graph objects, with
+    a human readable tag.
+
+        (obj1)-[link]->(obj2)
+
+    """
+
     def create(self, source, target, tag):
+        """Creates a new link RID graph object."""
         @driver.execute_write
         def execute_create(tx: ManagedTransaction, source, target, tag):
             CREATE_LINK = """//cypher
@@ -33,6 +45,7 @@ class GraphLinkInterface(GraphBaseInterface):
         return execute_create(source, target, tag)
         
     def read(self):
+        """Returns RIDs of linked source and target object."""
         @driver.execute_read
         def execute_read(tx: ManagedTransaction):
             READ_LINK = """//cypher
@@ -48,6 +61,7 @@ class GraphLinkInterface(GraphBaseInterface):
         return execute_read()
 
     def delete(self):
+        """Deletes link RID graph object."""
         @driver.execute_write
         def execute_delete(tx: ManagedTransaction):
             DELETE_LINK = """//cypher

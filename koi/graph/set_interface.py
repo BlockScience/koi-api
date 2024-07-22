@@ -6,7 +6,22 @@ from .base_interface import GraphBaseInterface
 
 
 class GraphSetInterface(GraphBaseInterface):
+    """Interface to a graph representation of a set RID object.
+
+    (see GraphBaseInterface for default behavior)
+
+    A set is a mutable group of graph objects. It can contain 0 to n
+    objects. In the graph, it is represented as a set object with
+    directed edges pointing towards member objects.
+
+        (set)->(obj1)
+          |--->(obj2)
+          |--->(obj3)
+
+    """
+
     def create(self, members):
+        """Creates a new link RID graph object."""
         @driver.execute_write
         def execute_create(tx: ManagedTransaction, members):
             CREATE_SET = """//cypher
@@ -31,6 +46,7 @@ class GraphSetInterface(GraphBaseInterface):
         return execute_create(members)
 
     def read(self):
+        """Returns RIDs of all member objects."""
         @driver.execute_read
         def execute_read(tx: ManagedTransaction):
             READ_SET = """//cypher
@@ -44,7 +60,12 @@ class GraphSetInterface(GraphBaseInterface):
                 return [RID.from_string(member) for member in record["members"]]
         return execute_read()
 
-    def update(self, add_members=[], remove_members=[]):
+    def update(
+            self, 
+            add_members: list[str]=[], 
+            remove_members: list[str]=[]
+        ):
+        """Adds and removes RID objects to set."""
         @driver.execute_write
         def execute_update(tx: ManagedTransaction, add_members, remove_members):
             added_members = []
