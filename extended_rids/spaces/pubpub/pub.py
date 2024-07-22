@@ -21,7 +21,9 @@ class PubPubPub(PubPubSpace):
         if len(components) == 2:
             return cls(*components)
         else:
-            raise InvalidReferenceFormatError("PubPubPub RIDs must be in the following format: 'pubpub.pub:<subdomain>/<slug>'")
+            raise InvalidReferenceFormatError(
+                "PubPubPub RIDs must be in the following format: "
+                "'pubpub.pub:<subdomain>/<slug>'")
         
     def dereference(self) -> DataObject:
         url = f"https://{self.subdomain}.pubpub.org/pub/{self.slug}"

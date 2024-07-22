@@ -9,25 +9,27 @@ from .object_model import CacheObject
 
 class CacheInterface:
     """
-    Interface to the cache of an RID. A CacheInterface is automatically 
-    generated and bound to all RID objects in extensions.py as the 
-    'cache' property. 
+    Interface to the cache of an RID.
     
-    For example:
+    A CacheInterface is automatically generated and bound to all RID 
+    objects as the 'cache' property (see extensions.py). It provides
+    access to functions viewing and modifying an RID's cache entry.
+    
+    Example:
         import koi
         from rid_lib.core import RID, DataObject
 
         rid = RID.from_string("example.rid:string")
         data_object = DataObject(json_data={
-            "test": True
+            "text": "hello world"
         })
         rid.cache.write(data_object)
         print(rid.cache.read().json())
 
     Each RID can have a cache file, by default located in the 'cache/' 
     directory, where the filename is the base64 encoding of the RID 
-    string + '.json'. Metadata is automatically generate when 'write' is
-    called.
+    string + '.json'. Metadata is automatically generated when 'write'
+    is called.
     """
 
     def __init__(self, rid: RID):
@@ -47,10 +49,16 @@ class CacheInterface:
             data_object: DataObject | None = None,
             from_dereference: bool = False
         ) -> CacheObject:
-        """
-        Writes a DataObject to RID cache. Can write both JSON data and files.
+        """Writes a DataObject to RID cache.
 
-        Returns a CacheObject object, which will be empty if nothing was written.
+        If inputted DataObject has JSON data, it is written to the cache
+        directory (default 'cache/') as a JSON file with the name set to
+        the base 64 encoding of the RID string.
+
+        If inputted DataObject has files, they are written to a
+        directory named with the encoded RID string (see above).
+
+        Returns a CacheObject.
         """
 
         if not os.path.exists(CACHE_DIRECTORY):
@@ -109,6 +117,7 @@ class CacheInterface:
             return CacheObject()
         
     def read_file(self, file_name):
+        """Reads and return file from RID cache."""
         try:
             with open(f"{self.directory_path}/{file_name}", "rb") as f:
                 return f.read()
@@ -116,6 +125,7 @@ class CacheInterface:
             return None
 
     def delete(self):
+        """Deletes RID cache entry and associated files."""
         try:
             os.remove(self.file_path)
             shutil.rmtree(self.directory_path)
@@ -124,6 +134,7 @@ class CacheInterface:
 
     @staticmethod
     def drop():
+        """Deletes all RID cache entries."""
         try:
             shutil.rmtree(CACHE_DIRECTORY)
         except FileNotFoundError:

@@ -4,14 +4,19 @@ from dataclasses import dataclass, field
 @dataclass
 class CacheObject:
     """
+    Object representing an individual RID cache entry.
+
     A container object for the cached data associated with an RID. It is 
     returned by the read and write functions of a CacheableObject. It 
-    provides slightly more flexibility than a raw JSON object, which is 
-    the format that the underlying data is actually stored in.
+    stores the JSON data associated with an RID object, corresponding
+    metadata, and files if available.
 
     JSON format: 
     {
         "metadata": {
+            "files": {
+                ...
+            },
             ...
         },
         "data": {
@@ -22,9 +27,10 @@ class CacheObject:
 
     metadata: dict | None = None
     json_data: dict | None = None
-    files: dict = field(init=False)
+    files: list = field(init=False)
 
     def __post_init__(self):
+        """Populates files list if present in metadata."""
         self.files = []
 
         if self.metadata:
