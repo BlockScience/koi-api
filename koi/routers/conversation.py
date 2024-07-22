@@ -14,10 +14,10 @@ class CreateConversation(BaseModel):
 
 @router.post("")
 def create_conversation(obj: CreateConversation):
-    conversation_id = llm.start_conversation(obj.conversation_id)
+    """Creates a new LLM conversation and returns its ID."""
 
     return {
-        "conversation_id": conversation_id
+        "conversation_id": llm.start_conversation(obj.conversation_id)
     }
 
 
@@ -26,6 +26,8 @@ class CreateMessage(BaseModel):
 
 @router.post("/{conversation_id}")
 def make_query(obj: CreateMessage, conversation_id: str):
+    """Continues conversation and returns LLM response."""
+
     return {
         "response": llm.continue_conversation(conversation_id, obj.query)
     }

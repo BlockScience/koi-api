@@ -18,6 +18,7 @@ class CreateLink(BaseModel):
 
 @router.post("")
 def create_link(link_obj: CreateLink):
+    """Creates link between provided source and target RIDs."""
     if link_obj.source == link_obj.target:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -46,6 +47,7 @@ class ReadLink(BaseModel):
 
 @router.get("")
 def read_link(link_obj: ReadLink):
+    """Returns link RID and linked source and target RIDs."""
     rid = link_obj.rid
     result = rid.graph.read()
 
@@ -65,6 +67,7 @@ class DeleteLink(BaseModel):
 
 @router.delete("")
 def delete_link(link_obj: DeleteLink):
+    """Deletes link object."""
     rid = link_obj.rid
     success = rid.graph.delete()
 

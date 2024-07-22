@@ -19,6 +19,7 @@ class CreateObject(BaseModel):
 
 @router.post("/object")
 def create_object(knowledge_obj: CreateObject):
+    """Observes RID object, optionally caching and embedding its data."""
     rid = knowledge_obj.rid
     rid.graph.create()
     data_object = DataObject(json_data=knowledge_obj.data)
@@ -47,6 +48,7 @@ class CreateObjects(BaseModel):
 
 @router.post("/objects")
 def create_objects(knowledge_objs: CreateObjects):
+    """Observes multiple RID objects."""
     objects = {}
     for rid, data in knowledge_objs.rids.items():
         objects[str(rid)] = create_object(
@@ -67,6 +69,7 @@ class ReadObject(BaseModel):
 
 @router.get("/object")
 def read_object(knowledge_obj: ReadObject):
+    """Returns cached JSON data of RID object."""
     rid = knowledge_obj.rid
     return rid.cache.read().json_data
 
@@ -79,6 +82,7 @@ class DeleteObject(BaseModel):
 
 @router.delete("/object")
 def delete_object(knowledge_obj: DeleteObject):
+    """Deletes RID object from graph, cache, and vectorstore."""
     rid = knowledge_obj.rid
     success = rid.graph.delete()
 
@@ -86,6 +90,7 @@ def delete_object(knowledge_obj: DeleteObject):
         raise ResourceNotFoundError(rid)
 
     rid.cache.delete()
+    rid.vector.delete()
 
 
 class ReadObjectLink(BaseModel):
@@ -94,6 +99,7 @@ class ReadObjectLink(BaseModel):
 
 @router.get("/object/link")
 def read_object_link(obj_link: ReadObjectLink):
+    """Returns RID of linked object, or a linked set's members."""
     rid = obj_link.rid
     target = rid.graph.read_link(obj_link.tag)
 
@@ -120,8 +126,7 @@ class MergeLinkedSet(BaseModel):
 
 @router.post("/object/link")
 def merge_linked_set(linked_set: MergeLinkedSet):
-    print(linked_set.model_dump())
-
+    """Adds members to linked set, which is created if it doesn't exist yet."""
     rid = linked_set.rid
     target = rid.graph.read_link(linked_set.tag)
     

@@ -17,6 +17,7 @@ class CreateSet(BaseModel):
 
 @router.post("")
 def create_set(set_obj: CreateSet):
+    """Creates new set containing provided RIDs."""
     rid = KoiSet(nanoid.generate())
     members = rid.graph.create(rid, set_obj.members)
 
@@ -31,6 +32,7 @@ class ReadSet(BaseModel):
 
 @router.get("")
 def read_set(set_obj: ReadSet):
+    """Returns set RID and member RIDs."""
     rid = set_obj.rid
     members = rid.graph.read()
 
@@ -50,6 +52,7 @@ class UpdateSet(BaseModel):
 
 @router.put("")
 def update_set(set_obj: UpdateSet):
+    """Updates set by adding or removing members."""
     rid = set_obj.rid
 
     # remove duplicates
@@ -83,6 +86,7 @@ class DeleteSet(BaseModel):
 
 @router.delete("")
 def delete_set(set_obj: DeleteSet):
+    """Deletes set object."""
     rid = set_obj.rid
     success = rid.graph.delete()
 
