@@ -87,20 +87,11 @@ class CacheInterface:
                     elif type(binary_data) is str:
                         f.write(binary_data.encode())
 
-        metadata = {
-            "rid": str(self.rid),
-            "space": self.rid.space,
-            "format": self.rid.format,
-            "timestamp": time.time(),
-            # not currently hashing file data
-            "sha256_hash": utils.hash_json(data_object.json_data or {}),
-            "files": list(data_object.files.keys()) if data_object.files else []
-        }
-
-        if "text" in data_object.json_data:
-            metadata["character_length"] = len(data_object.json_data["text"])
-
-        cache_entry = CacheObject(metadata, data_object.json_data)
+        metadata = utils.generate_metadata(self.rid, data_object)
+        cache_entry = CacheObject(
+            metadata=metadata,
+            json_data=data_object.json_data
+        )
 
         with open(self.file_path, "w") as f:
             json.dump(cache_entry.to_dict(), f, indent=2)

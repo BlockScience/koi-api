@@ -11,7 +11,7 @@ def purge(self: RID):
     self.cache.delete()
     self.vector.delete()
 
-def extended_rid_post_init(self):
+def extended_rid_post_init(self: RID):
     """Adds graph, cache, and vector interfaces to RID objects."""
     if isinstance(self, KoiSet):
         self.graph = GraphSetInterface(self)

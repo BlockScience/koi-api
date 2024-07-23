@@ -1,5 +1,5 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from rid_lib.core import RID
+from rid_lib.core import RID, DataObject
 
 from koi.config import (
     PINECONE_BATCH_SIZE,
@@ -7,6 +7,7 @@ from koi.config import (
     CHUNK_SIZE,
     CHUNK_OVERLAP
 )
+from koi import utils
 from .connectors import pinecone_index, voyage_embed_texts
 from .object_model import VectorObject
 
@@ -38,7 +39,13 @@ class VectorInterface:
     def __init__(self, rid: RID):
         self.rid = rid
 
-    def embed(self, flush_queue=False) -> None:
+    def embed(
+            self,
+            data_object: DataObject | None = None,
+            from_dereference: bool = False,
+            from_cache: bool = False,
+            flush_queue=False
+        ) -> None:
         """Adds an RID object to the embedding queue.
 
         Currently reads JSON data from cache, and looks for a text field
@@ -50,19 +57,45 @@ class VectorInterface:
         For chunks, "#chunk:{id}" is appended to the end of the rid_str.
         If the queue exceeds the queue_limit, or flush_queue is set to
         true, embed_queue is called, embedding all of the queued chunks.
-
-        TODO: add flags to use dereferenced or cached data
         """
-        cached_object = self.rid.cache.read()
 
-        if (cached_object.json_data is None or
-            "text" not in cached_object.json_data):
-            print("cache empty or missing text field, can't embed")
-            return False
+        if sum([
+            data_object is not None,
+            from_dereference, 
+            from_cache
+        ]) != 1:
+            raise Exception(
+                "Call to embed must pass in DataObject OR set "
+                "from_dereference = True OR set from_cache = True"
+            )
+
+        if data_object is not None:
+            if not data_object.json_data:
+                raise Exception("DataObject doesn't contain JSON data")
+            elif "text" not in data_object.json_data:
+                raise Exception("DataObject data missing 'text' field")
+            
+        if from_dereference:
+            data_object = self.rid.dereference()
+            if not data_object.json_data:
+                raise Exception("Dereference didn't return JSON data")
+            elif "text" not in data_object.json_data:
+                raise Exception("Dereferenced data missing 'text' field")
         
-        text = cached_object.json_data["text"]
-        meta = cached_object.metadata
-        del meta["files"]
+        if data_object is not None:
+            text = data_object.json_data["text"]
+            metadata = utils.generate_metadata(self.rid, data_object)
+
+        if from_cache:
+            cache_object = self.rid.cache.read()
+            if not cache_object.json_data:
+                raise Exception("Cache empty or doesn't contain JSON data")
+            elif "text" not in cache_object.json_data:
+                raise Exception("Cache data missing 'text' field")
+            
+            text = cache_object.json_data["text"]
+            metadata = cache_object.metadata
+
 
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=CHUNK_SIZE,
@@ -82,7 +115,7 @@ class VectorInterface:
 
         if len(chunks) == 1:
             self.embedding_queue.append([
-                str(self.rid), text, meta
+                str(self.rid), text, metadata
             ])
             print(f"added {self.rid} to embedding queue")
 
@@ -91,7 +124,7 @@ class VectorInterface:
                 rid_fragment = self.create_rid_fragment_string(self.rid, i)
                 chunk_text = chunk["text"]
                 chunk_meta = {
-                    **meta,
+                    **metadata,
                     "character_length": len(chunk_text),
                     "text": chunk_text,
                     "chunk_start": chunk["start"],
