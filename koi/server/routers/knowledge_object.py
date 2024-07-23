@@ -16,7 +16,7 @@ class CreateObject(BaseModel):
     data: dict | None = None
     use_dereference: bool = True
     overwrite: bool = False
-    create_embedding: bool = True
+    embed: bool = True
 
 @router.post("/object")
 def create_object(knowledge_obj: CreateObject):
@@ -35,7 +35,7 @@ def create_object(knowledge_obj: CreateObject):
             print("writing cache with dereferenced data")
             cached_object = rid.cache.write(from_dereference=True)
 
-    if knowledge_obj.create_embedding:
+    if knowledge_obj.embed:
         rid.vector.embed(from_cache=True)
     
     return cached_object.to_dict()
@@ -45,7 +45,7 @@ class CreateObjects(BaseModel):
     rids: dict[RIDField, dict | None]
     use_dereference: bool = True
     overwrite: bool = False
-    create_embedding: bool = True
+    embed: bool = True
 
 @router.post("/objects")
 def create_objects(knowledge_objs: CreateObjects):
@@ -58,7 +58,7 @@ def create_objects(knowledge_objs: CreateObjects):
                 data, 
                 knowledge_objs.use_dereference, 
                 knowledge_objs.overwrite, 
-                knowledge_objs.create_embedding
+                knowledge_objs.embed
             )
         )
 

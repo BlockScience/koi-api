@@ -42,7 +42,7 @@ If you want to use the default configuration, create a local DBMS with the defau
 
 Everything is configured now, and the API server can be run with the following command:
 ```bash
-python -m koi
+python -m koi.server
 ```
 
 If everything worked correctly, you should see a development server running on `http://127.0.0.1:8000`. Auto generated API documentation can be viewed at http://127.0.0.1:8000/docs.
