@@ -9,6 +9,7 @@ from koi.routers import (
 import extended_rids
 from koi import extensions
 
+# adds extended functionality to RIDs
 extensions.patch_rid()
 
 app = FastAPI()

@@ -10,10 +10,14 @@ from pydantic import GetCoreSchemaHandler
 
 @dataclass
 class RIDField(RID):
+    """Custom Pydantic field for RID objects."""
     @classmethod
     def __get_pydantic_core_schema__(
-        cls, source: Type[Any], handler: GetCoreSchemaHandler
+        cls, 
+        source: Type[Any], 
+        handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
+        
         assert source is RIDField
         return core_schema.no_info_after_validator_function(
             cls._validate,
@@ -27,6 +31,7 @@ class RIDField(RID):
     
     @staticmethod
     def _validate(value: str):
+        """Returns RID object from input string, reraises RID errors."""
         try:
             return RID.from_string(value)
         except RidException as error:

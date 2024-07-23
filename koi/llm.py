@@ -2,7 +2,6 @@ import json
 
 from openai import OpenAI
 import nanoid
-from rid_lib.core import RID
 
 from .config import OPENAI_API_KEY
 from .vectorstore import VectorInterface
@@ -22,11 +21,13 @@ system_prompt = {
 }
 
 def start_conversation(conversation_id=None):
+    """Creates a new conversation with provided id, or generates one randomly."""
     conversation_id = conversation_id or nanoid.generate()
     conversations[conversation_id] = [system_prompt]
     return conversation_id
 
 def continue_conversation(conversation_id, query):
+    """Continues conversation, returns response."""
     conversation = conversations.get(conversation_id)
     if conversation is None:
         start_conversation(conversation_id)
