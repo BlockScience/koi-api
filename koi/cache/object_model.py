@@ -3,11 +3,10 @@ from dataclasses import dataclass, field
 
 @dataclass
 class CacheObject:
-    """
-    Object representing an individual RID cache entry.
+    """Object representing an individual RID cache entry.
 
     A container object for the cached data associated with an RID. It is 
-    returned by the read and write functions of a CacheableObject. It 
+    returned by the read and write functions of a CacheInterface. It 
     stores the JSON data associated with an RID object, corresponding
     metadata, and files if available.
 

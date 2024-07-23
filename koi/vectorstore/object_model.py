@@ -6,6 +6,13 @@ class VectorObject:
             self,
             vector: dict
         ):
+        """Object representing a vector associated with an RID object.
+        
+        A container object for a vector associated with an RID. It is
+        returned by read and query functions of a VectorInterface. It
+        stores the metadata associated with an embedded RID object,
+        and chunk information if applicable.
+        """
 
         self.id = vector.get("id")
         self.metadata = vector.get("metadata")
@@ -23,7 +30,7 @@ class VectorObject:
         json_data = {
             "id": self.id, 
             "rid": str(self.rid),
-            "score": self.score,
+            "score": self.score or None,
             "metadata": self.metadata,
             "text": self.get_text(),
             "is_chunk": self.is_chunk,
@@ -38,6 +45,11 @@ class VectorObject:
         return json_data
 
     def get_text(self):
+        """Returns associated text data from the cache.
+
+        If VectorObject is a chunk, the start and end string indices are
+        used to return the correct chunk of text.
+        """
         cached_obj = self.rid.cache.read()
         text = cached_obj.json_data.get("text")
         if not text: return

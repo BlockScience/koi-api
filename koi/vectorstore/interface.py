@@ -12,13 +12,47 @@ from .object_model import VectorObject
 
 
 class VectorInterface:
+    """Interface to the vectorstore representation of an RID object.
+    
+    A VectorInterface is automatically generated and bound to all RID 
+    objects as the 'vector' property (see extensions.py). It provides
+    access to functions viewing and modifying an RID's vector embeddings.
+
+    Example:
+        import koi
+        from rid_lib.core import RID
+
+        rid = RID.from_string("example.rid:string")
+        rid.cache.write(from_dereference=True)
+        rid.vector.embed(flush_queue=True)
+        print(rid.vector.read())
+
+    An RID can have 0 to n associated vectors. RIDs with large text
+    fields are split into chunks when embedded creating multiple vector
+    objects for better RAG performance.
+    """
+
     embedding_queue = []
     queue_limit = 100
 
     def __init__(self, rid: RID):
         self.rid = rid
 
-    def embed(self, flush_queue=False):
+    def embed(self, flush_queue=False) -> None:
+        """Adds an RID object to the embedding queue.
+
+        Currently reads JSON data from cache, and looks for a text field
+        to embed. Text is chunked if exceeding maximum chunk size, and
+        added to embedding queue in the following format:
+
+            [rid_str, text, metadata]
+
+        For chunks, "#chunk:{id}" is appended to the end of the rid_str.
+        If the queue exceeds the queue_limit, or flush_queue is set to
+        true, embed_queue is called, embedding all of the queued chunks.
+
+        TODO: add flags to use dereferenced or cached data
+        """
         cached_object = self.rid.cache.read()
 
         if (cached_object.json_data is None or
@@ -29,7 +63,6 @@ class VectorInterface:
         text = cached_object.json_data["text"]
         meta = cached_object.metadata
         del meta["files"]
-        meta["text"] = text
 
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=CHUNK_SIZE,
@@ -67,7 +100,8 @@ class VectorInterface:
                     "num_chunks": len(chunks)
                 }
 
-                print(f"{self.rid} chunk {i+1}/{len(chunks)} [{chunk['start']}:{chunk['end']}]")
+                print(f"{self.rid} chunk {i+1}/{len(chunks)} "
+                    f"[{chunk['start']}:{chunk['end']}]")
                 
                 self.embedding_queue.append([
                     rid_fragment, chunk_text, chunk_meta
@@ -78,7 +112,8 @@ class VectorInterface:
             self.embed_queue()
 
     @classmethod
-    def embed_queue(cls):
+    def embed_queue(cls) -> None:
+        """Embeds all objects in the embedding queue."""
         print(f"flushing {len(cls.embedding_queue)} objects from embedding queue")
 
         ids, texts, metas = list(zip(*cls.embedding_queue))
@@ -101,13 +136,19 @@ class VectorInterface:
         )
         cls.embedding_queue = []
 
-    def get_vector_ids(self, return_vectors=False):
-        """
-        If the RID is not chunked, it will have one vector where the id 
-        is its RID. If the RID is chunked, its id will take the form 
-        '{RID}#chunk:{id}'. It will test both possible starting ids to 
-        determine whether the RID is chunked, and find the other ids if 
-        it is.
+    def get_vector_ids(
+            self,
+            return_vectors=False
+        ) -> list[str] | tuple[list[str], dict]:
+        """Returns a list of all vector ids associated with RID object.
+
+        If 'return_vectors' is set to True, a list of the raw vector
+        dicts returned by the pinecone API will also be returned.
+
+        If an RID object is not chunked, it will have a single vector
+        with an id equal to the RID. If the RID object is chunked, it
+        will have multiple vectors with ids in the form of 
+        '{RID}#chunk:{id}'.
         """
 
         rid_fragment_str = self.create_rid_fragment_string(self.rid, 0)
@@ -135,7 +176,8 @@ class VectorInterface:
         else:
             return vector_ids
 
-    def read(self):
+    def read(self) -> list[VectorObject]:
+        """Returns a list of all VectorObjects associated with RID object."""
         vector_ids, vectors = self.get_vector_ids(return_vectors=True)
 
         if len(vector_ids) == 1:
@@ -156,7 +198,8 @@ class VectorInterface:
         else:
             return []
         
-    def delete(self):
+    def delete(self) -> dict:
+        """Deletes all vectors associated with RID object."""
         vector_ids = self.get_vector_ids()
         if vector_ids:
             return pinecone_index.delete(self.get_vector_ids())
@@ -164,11 +207,25 @@ class VectorInterface:
             return {}
 
     @staticmethod
-    def create_rid_fragment_string(rid, chunk_id):
+    def create_rid_fragment_string(rid, chunk_id) -> str:
+        """Generates RID fragment string.
+        
+        RID fragments are chunk ids append to RIDs to represent multiple
+        vectors resulting from a chunked RID object.
+        """
         return f"{rid}#chunk:{chunk_id}"
     
     @staticmethod
-    def query(text, top_k=10, filter={"character_length": {"$gt": 200}}):
+    def query(
+        text,
+        top_k=10,
+        filter={
+            "character_length": {
+                "$gt": 200
+            }
+        }
+    ) -> list[VectorObject]:
+        """Returns a list of VectorObjects resulting from provided query."""
         result = pinecone_index.query(
             vector=voyage_embed_texts([text], input_type="query"),
             filter=filter,
@@ -182,5 +239,6 @@ class VectorInterface:
         ]
     
     @staticmethod
-    def drop():
+    def drop() -> None:
+        """Deletes all vectors."""
         pinecone_index.delete(delete_all=True)
