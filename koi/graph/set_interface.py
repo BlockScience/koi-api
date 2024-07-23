@@ -20,7 +20,7 @@ class GraphSetInterface(GraphBaseInterface):
 
     """
 
-    def create(self, members):
+    def create(self, members) -> list[RID]:
         """Creates a new link RID graph object."""
         @driver.execute_write
         def execute_create(tx: ManagedTransaction, members):
@@ -40,12 +40,14 @@ class GraphSetInterface(GraphBaseInterface):
                 params=self.rid.params
             )
 
-            members = [record["member.rid"] for record in member_records]
-            return members
+            return [
+                RID.from_string(record["member.rid"])
+                for record in member_records
+            ]
         
         return execute_create(members)
 
-    def read(self):
+    def read(self) -> list[RID] | None:
         """Returns RIDs of all member objects."""
         @driver.execute_read
         def execute_read(tx: ManagedTransaction):
@@ -58,14 +60,16 @@ class GraphSetInterface(GraphBaseInterface):
             record = tx.run(READ_SET, rid=str(self.rid)).single()
             if record:
                 return [RID.from_string(member) for member in record["members"]]
+            else:
+                return None
         return execute_read()
 
     def update(
             self, 
             add_members: list[str]=[], 
             remove_members: list[str]=[]
-        ):
-        """Adds and removes RID objects to set."""
+        ) -> bool:
+        """Adds/removes RID objects to/from set. Returns success."""
         @driver.execute_write
         def execute_update(tx: ManagedTransaction, add_members, remove_members):
             added_members = []
@@ -78,7 +82,7 @@ class GraphSetInterface(GraphBaseInterface):
             
             result = tx.run(CHECK_EXISTENCE, rid=str(self.rid))
             if result.peek() is None:
-                return None
+                return False
 
             if add_members:
                 ADD_MEMBERS = """//cypher
@@ -95,10 +99,10 @@ class GraphSetInterface(GraphBaseInterface):
                     member_rids=add_members
                 )
                 
-                added_members = [
-                    record["member.rid"] 
-                    for record in added_member_records
-                ]
+                # added_members = [
+                #     RID.from_string(record["member.rid"]) 
+                #     for record in added_member_records
+                # ]
             
             if remove_members:
                 REMOVE_MEMBERS = """//cypher
@@ -115,10 +119,10 @@ class GraphSetInterface(GraphBaseInterface):
                     member_rids=remove_members
                 )
                 
-                removed_members = [
-                    record["member.rid"] 
-                    for record in removed_member_records
-                ]
+                # removed_members = [
+                #     RID.from_string(record["member.rid"]) 
+                #     for record in removed_member_records
+                # ]
 
-            return added_members, removed_members
+            return True
         return execute_update(add_members, remove_members)

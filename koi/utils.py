@@ -29,6 +29,17 @@ def hash_json(data: dict):
     hash.update(json_bytes)
     return hash.hexdigest()
 
+def serialize_rids(obj):
+    """Recursively replaces all RID objects with strings in dict or list."""
+    if isinstance(obj, dict):
+        return {key: serialize_rids(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [serialize_rids(item) for item in obj]
+    elif isinstance(obj, RID):
+        return str(obj)
+    else:
+        return obj
+
 def generate_metadata(rid: RID, data_object: DataObject):
     metadata = {
         "rid": str(rid),

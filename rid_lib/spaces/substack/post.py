@@ -27,7 +27,8 @@ class SubstackPost(SubstackSpace):
         
     def dereference(self):
         url = f"https://{self.subdomain}.substack.com/api/v1/posts/{self.slug}"
-        post_data = requests.get(url).json()
+        response = requests.get(url)
+        post_data = response.json()
         post_html: str = post_data["body_html"]
         post_text: str = html2text(post_html, bodywidth=0)
         post_data["text"] = post_text

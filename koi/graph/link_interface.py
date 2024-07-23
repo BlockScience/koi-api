@@ -1,4 +1,5 @@
 from neo4j import ManagedTransaction
+from rid_lib.core import RID
 
 from . import driver
 from .base_interface import GraphBaseInterface
@@ -15,7 +16,7 @@ class GraphLinkInterface(GraphBaseInterface):
 
     """
 
-    def create(self, source, target, tag):
+    def create(self, source, target, tag) -> bool:
         """Creates a new link RID graph object."""
         @driver.execute_write
         def execute_create(tx: ManagedTransaction, source, target, tag):
@@ -44,7 +45,7 @@ class GraphLinkInterface(GraphBaseInterface):
         
         return execute_create(source, target, tag)
         
-    def read(self):
+    def read(self) -> tuple[RID, RID] | None:
         """Returns RIDs of linked source and target object."""
         @driver.execute_read
         def execute_read(tx: ManagedTransaction):
@@ -56,11 +57,14 @@ class GraphLinkInterface(GraphBaseInterface):
             record = tx.run(READ_LINK, rid=str(self.rid)).single()
 
             if record:
-                return record["source.rid"], record["target.rid"]
+                return (
+                    RID.from_string(record["source.rid"]), 
+                    RID.from_string(record["target.rid"])
+                )
         
         return execute_read()
 
-    def delete(self):
+    def delete(self) -> bool:
         """Deletes link RID graph object."""
         @driver.execute_write
         def execute_delete(tx: ManagedTransaction):

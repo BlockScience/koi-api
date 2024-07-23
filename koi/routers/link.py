@@ -4,6 +4,7 @@ from rid_lib.spaces.koi import KoiLink
 
 from koi.exceptions import ResourceNotFoundError
 from koi.validators import RIDField
+from koi import utils
 
 
 router = APIRouter(
@@ -35,11 +36,11 @@ def create_link(link_obj: CreateLink):
     if not success:
         raise ResourceNotFoundError(rid, detail="Source and/or target not found")
 
-    return {
-        "rid": str(rid),
-        "source": str(link_obj.source),
-        "target": str(link_obj.target)
-    }
+    return utils.serialize_rids({
+        "rid": rid,
+        "source": link_obj.source,
+        "target": link_obj.target
+    })
 
 
 class ReadLink(BaseModel):
@@ -56,11 +57,11 @@ def read_link(link_obj: ReadLink):
 
     source, target = result
 
-    return {
-        "rid": str(rid),
+    return utils.serialize_rids({
+        "rid": rid,
         "source": source,
         "target": target
-    }
+    })
 
 class DeleteLink(BaseModel):
     rid: RIDField

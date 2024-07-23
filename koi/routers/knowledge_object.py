@@ -6,6 +6,7 @@ from rid_lib.spaces.koi import KoiLink, KoiSet
 
 from koi.exceptions import ResourceNotFoundError
 from koi.validators import RIDField
+from koi import utils
 
 
 router = APIRouter(tags=["Knowledge Object"])
@@ -25,7 +26,7 @@ def create_object(knowledge_obj: CreateObject):
     data_object = DataObject(json_data=knowledge_obj.data)
 
     cached_object = rid.cache.read()
-    if cached_object or knowledge_obj.overwrite:
+    if not cached_object or knowledge_obj.overwrite:
         if data_object:
             print("writing cache with provided data")
             cached_object = rid.cache.write(data_object)
@@ -35,7 +36,7 @@ def create_object(knowledge_obj: CreateObject):
             cached_object = rid.cache.write(from_dereference=True)
 
     if knowledge_obj.create_embedding:
-        rid.vector.embed()
+        rid.vector.embed(from_cache=True)
     
     return cached_object.to_dict()
 
@@ -108,15 +109,15 @@ def read_object_link(obj_link: ReadObjectLink):
             rid, detail=f"{rid} has no link with tag '{obj_link.tag}'")
     
     result = {
-        "rid": str(rid),
-        "target_rid": str(target)
+        "rid": rid,
+        "target_rid": target
     }
     
     if isinstance(target, KoiSet):
         members = target.graph.read()
         result["members"] = members
     
-    return result
+    return utils.serialize_rids(result)
 
 
 class MergeLinkedSet(BaseModel):
@@ -140,12 +141,11 @@ def merge_linked_set(linked_set: MergeLinkedSet):
             tag=linked_set.tag
         )
     else:
-        members, _ = target.graph.update(add_members=linked_set.members)
+        target.graph.update(add_members=linked_set.members)
+        members = target.graph.read()
 
-    print(rid, members)
-
-    return {
-        "rid": str(rid),
+    return utils.serialize_rids({
+        "rid": rid,
         "members": members
-    }
+    })
         

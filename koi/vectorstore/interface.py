@@ -4,6 +4,7 @@ from rid_lib.core import RID, DataObject
 from koi.config import (
     PINECONE_BATCH_SIZE,
     VOYAGEAI_BATCH_SIZE,
+    EMBEDDING_QUEUE_LIMIT,
     CHUNK_SIZE,
     CHUNK_OVERLAP
 )
@@ -25,7 +26,7 @@ class VectorInterface:
 
         rid = RID.from_string("example.rid:string")
         rid.cache.write(from_dereference=True)
-        rid.vector.embed(flush_queue=True)
+        rid.vector.embed(from_cache=True, flush_queue=True)
         print(rid.vector.read())
 
     An RID can have 0 to n associated vectors. RIDs with large text
@@ -34,7 +35,6 @@ class VectorInterface:
     """
 
     embedding_queue = []
-    queue_limit = 100
 
     def __init__(self, rid: RID):
         self.rid = rid
@@ -71,16 +71,20 @@ class VectorInterface:
 
         if data_object is not None:
             if not data_object.json_data:
-                raise Exception("DataObject doesn't contain JSON data")
+                print("DataObject doesn't contain JSON data")
+                return False
             elif "text" not in data_object.json_data:
-                raise Exception("DataObject data missing 'text' field")
+                print("DataObject data missing 'text' field")
+                return False
             
         if from_dereference:
             data_object = self.rid.dereference()
             if not data_object.json_data:
-                raise Exception("Dereference didn't return JSON data")
+                print("Dereference didn't return JSON data")
+                return False
             elif "text" not in data_object.json_data:
-                raise Exception("Dereferenced data missing 'text' field")
+                print("Dereferenced data missing 'text' field")
+                return False
         
         if data_object is not None:
             text = data_object.json_data["text"]
@@ -89,9 +93,11 @@ class VectorInterface:
         if from_cache:
             cache_object = self.rid.cache.read()
             if not cache_object.json_data:
-                raise Exception("Cache empty or doesn't contain JSON data")
+                print("Cache empty or doesn't contain JSON data")
+                return False
             elif "text" not in cache_object.json_data:
-                raise Exception("Cache data missing 'text' field")
+                print("Cache data missing 'text' field")
+                return False
             
             text = cache_object.json_data["text"]
             metadata = cache_object.metadata
@@ -141,8 +147,10 @@ class VectorInterface:
                 ])
             print(f"added {self.rid} to embedding queue ({len(chunks)} chunks)")
 
-        if flush_queue is True or len(self.embedding_queue) > self.queue_limit:
+        if flush_queue is True or len(self.embedding_queue) > EMBEDDING_QUEUE_LIMIT:
             self.embed_queue()
+
+        return True
 
     @classmethod
     def embed_queue(cls) -> None:

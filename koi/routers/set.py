@@ -5,6 +5,7 @@ from rid_lib.spaces.koi import KoiSet
 
 from koi.exceptions import ResourceNotFoundError
 from koi.validators import RIDField
+from koi import utils
 
 
 router = APIRouter(
@@ -21,10 +22,10 @@ def create_set(set_obj: CreateSet):
     rid = KoiSet(nanoid.generate())
     members = rid.graph.create(rid, set_obj.members)
 
-    return {
-        "rid": str(rid),
+    return utils.serialize_rids({
+        "rid": rid,
         "members": members
-    }
+    })
 
 
 class ReadSet(BaseModel):
@@ -39,10 +40,10 @@ def read_set(set_obj: ReadSet):
     if members is None:
         raise ResourceNotFoundError(rid)
 
-    return {
-        "rid": str(rid),
+    return utils.serialize_rids({
+        "rid": rid,
         "members": members
-    }
+    })
 
 
 class UpdateSet(BaseModel):
@@ -64,21 +65,17 @@ def update_set(set_obj: UpdateSet):
     add_members -= intersection
     remove_members -= intersection
 
-    result = rid.graph.update(
+    success = rid.graph.update(
         add_members=list(add_members),
         remove_members=list(remove_members)
     )
-
-    if result is None:
+    if not success:
         raise ResourceNotFoundError(rid)
 
-    added_members, removed_members = result
-
-    return {
-        "rid": str(rid),
-        "added_members": added_members,
-        "removed_members": removed_members
-    }
+    return utils.serialize_rids({
+        "rid": rid,
+        "success": success
+    })
 
 
 class DeleteSet(BaseModel):
