@@ -60,11 +60,11 @@ def continue_conversation(conversation_id, query):
     footnote_table = ""
     for n, vector in enumerate(vectors):
         line = f"{n+1}: <{vector.rid}>"
-        cited = f"[{n+1}]" in bot_message
-        if not cited: line += " (unused)"
+        # cited = f"[{n+1}]" in bot_message
+        # if not cited: line += " (unused)"
         footnote_table += line + "\n"
 
-        conversation[-1]["knowledge"][n]["cited"] = cited
+        # conversation[-1]["knowledge"][n]["cited"] = cited
     
     conversation.append({
         "role": "assistant",
