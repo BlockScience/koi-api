@@ -132,7 +132,6 @@ class VectorInterface:
                 chunk_meta = {
                     **metadata,
                     "character_length": len(chunk_text),
-                    "text": chunk_text,
                     "chunk_start": chunk["start"],
                     "chunk_end": chunk["end"],
                     "chunk_id": i,

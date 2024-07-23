@@ -34,11 +34,40 @@ def continue_conversation(conversation_id, query):
     conversation = conversations.get(conversation_id)
 
     vectors = VectorInterface.query(query)
+    # removes duplicates in the case of multiple chunks from the same document
+    unique_vector_rids = []
+    for v in vectors:
+        if v.rid not in unique_vector_rids:
+            unique_vector_rids.append(v.rid)
 
-    knowledge_text = "\n".join([
-        f"Knowledge Object [{n}] {v.rid}\n{v.get_text()}\n"
-        for n, v in enumerate(vectors)
-    ])
+    knowledge_text = ""
+    knowledge = []
+    for i, rid in enumerate(unique_vector_rids):
+        # filters all vectors with same rid
+        related_vectors = [v for v in vectors if v.rid == rid]
+        knowledge_text += f"Knowledge Object [{i+1}] {rid}\n"
+
+        # if single vector isn't a chunk just append text
+        if len(related_vectors) == 1 and not related_vectors[0].is_chunk:
+            knowledge_text += f"{related_vectors[0].get_text()}\n\n"
+            knowledge.append({
+                "knowledge_object_id": i+1,
+                "num_vectors": 1,
+                "vectors": [related_vectors[0].to_dict()]
+            })
+        # otherwise append each chunk with a chunk id prefix
+        else:
+            related_vectors.sort(key=lambda v: v.chunk_id)
+            chunks = {
+                "knowledge_object_id": i+1,
+                "num_vectors": len(related_vectors),
+                "vectors": []
+            }
+            for vector in related_vectors:
+                knowledge_text += f"Chunk {vector.chunk_id}:\n{vector.get_text()}\n\n"
+                chunks["vectors"].append(vector.to_dict())
+            knowledge.append(chunks)
+
 
     response = client.chat.completions.create(
         model="gpt-4o",
@@ -52,14 +81,15 @@ def continue_conversation(conversation_id, query):
     conversation.append({
         "role": "user",
         "content": query,
-        "knowledge": [v.to_dict() for v in vectors]
+        "knowledge_text": knowledge_text,
+        "knowledge": knowledge
     })
 
     bot_message = response.choices[0].message.content
 
     footnote_table = ""
-    for n, vector in enumerate(vectors):
-        line = f"{n+1}: <{vector.rid}>"
+    for n, rid in enumerate(unique_vector_rids):
+        line = f"{n+1}: <{rid}>"
         # cited = f"[{n+1}]" in bot_message
         # if not cited: line += " (unused)"
         footnote_table += line + "\n"
