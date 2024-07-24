@@ -64,7 +64,8 @@ def continue_conversation(conversation_id, query):
                 "vectors": []
             }
             for vector in related_vectors:
-                knowledge_text += f"Chunk {vector.chunk_id}:\n{vector.get_text()}\n\n"
+                # knowledge_text += f"Chunk {vector.chunk_id}:\n{vector.get_text()}\n\n"
+                knowledge_text += f"{vector.get_text()}\n\n"
                 chunks["vectors"].append(vector.to_dict())
             knowledge.append(chunks)
 

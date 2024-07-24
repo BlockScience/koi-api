@@ -1,6 +1,7 @@
 [Unit]
 Description=KOI API Service
-After=network.target
+After=network.target neo4j.service
+Requires=neo4j.service
 
 [Service]
 WorkingDirectory=/home/dev/koi-api

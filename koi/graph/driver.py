@@ -1,4 +1,5 @@
 import functools
+import time
 
 from neo4j import GraphDatabase, exceptions
 
@@ -11,11 +12,15 @@ from koi.config import (
 
 neo4j_driver = GraphDatabase.driver(NEO4J_URI, auth=NEO4J_AUTH)
 
-try:
-    neo4j_driver.verify_connectivity()
-except exceptions.ServiceUnavailable:
-    print("Failed to connect to Neo4j server")
-    quit()
+timeout = 5
+while True:
+    try:
+        neo4j_driver.verify_connectivity()
+        print("Connected to Neo4j server successfully")
+        break
+    except exceptions.ServiceUnavailable:
+        print(f"Failed to connect to Neo4j server, retrying in {timeout} seconds")
+        time.sleep(timeout)
 
 
 # Wrapper functions for performing Neo4j Cypher operations

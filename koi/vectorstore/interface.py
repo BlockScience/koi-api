@@ -258,7 +258,7 @@ class VectorInterface:
     @staticmethod
     def query(
         text,
-        top_k=10,
+        top_k=15,
         filter={
             "character_length": {
                 "$gt": 200
