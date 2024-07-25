@@ -20,7 +20,7 @@ class CreateSet(BaseModel):
 def create_set(set_obj: CreateSet):
     """Creates new set containing provided RIDs."""
     rid = KoiSet(nanoid.generate())
-    members = rid.graph.create(rid, set_obj.members)
+    members = rid.graph.create(set_obj.members)
 
     return utils.serialize_rids({
         "rid": rid,
