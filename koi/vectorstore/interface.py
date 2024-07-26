@@ -57,6 +57,9 @@ class VectorInterface:
         For chunks, "#chunk:{id}" is appended to the end of the rid_str.
         If the queue exceeds the queue_limit, or flush_queue is set to
         true, embed_queue is called, embedding all of the queued chunks.
+
+        TODO: Figure out what happens when the same object gets embedded
+        multiple times, handle object deletion within queue
         """
 
         if sum([

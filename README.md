@@ -1,4 +1,4 @@
-# KOI API
+# Knowledge Organization Infrastructure - KOI API
 
 ## Setup
 First we need to setup the Python environment by running the following commands. So far this has only been tested on Python 3.12.
@@ -24,11 +24,9 @@ OPENAI_API_KEY=
 PINECONE_API_KEY=
 VOYAGE_API_KEY=
 
+# only required if dereferencing Slack objects server side
 SLACK_BOT_TOKEN=
 SLACK_SIGNING_SECRET=
-
-PUBPUB_USERNAME=
-PUBPUB_PASSWORD=
 ```
 
 The current version requires [OpenAI](https://platform.openai.com/), [Pinecone](https://www.pinecone.io/), and [VoyageAI](https://www.voyageai.com/) API keys to function. Slack and PubPub are not required, but will throw errors if you attempt to dereference corresponding RID objects server side. (Even if you aren't using them, keep the definition with the empty string in the `.env` file or you will get an error.)
