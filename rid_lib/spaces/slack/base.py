@@ -18,9 +18,6 @@ class SlackSpace(RID):
 
     default_domain = "metagov"
 
-    def __init__(self):
-        super().__init__()
-
     @property
     def app(self):
         if not SlackSpace._app:

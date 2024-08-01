@@ -1,5 +1,6 @@
 from . import (
     koi,
     slack,
-    substack
+    substack,
+    web
 )

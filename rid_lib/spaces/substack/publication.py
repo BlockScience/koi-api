@@ -7,7 +7,6 @@ class SubstackPublication(SubstackSpace):
 
     def __init__(self, subdomain: str):
         self.subdomain = subdomain
-
         self.reference = subdomain
 
     @classmethod

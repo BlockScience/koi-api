@@ -13,8 +13,6 @@ class SlackChannel(SlackSpace):
         return f"https://{self.default_domain}.slack.com/archives/{self.channel_id}"
     
     def __init__(self, workspace_id: str, channel_id: str):
-        super().__init__()
-
         self.workspace_id = workspace_id
         self.channel_id = channel_id
 

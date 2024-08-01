@@ -5,8 +5,6 @@ class SlackWorkspace(SlackSpace):
     format = "workspace"
 
     def __init__(self, workspace_id: str):
-        super().__init__()
-
         self.workspace_id = workspace_id
         self.reference = workspace_id
 

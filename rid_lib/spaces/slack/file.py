@@ -14,8 +14,6 @@ class SlackFile(SlackSpace):
                 f"{self.workspace_id}-{self.file_id}/{self.file_name}")
     
     def __init__(self, workspace_id: str, file_id: str):
-        super().__init__()
-
         self.workspace_id = workspace_id
         self.file_id = file_id
 

@@ -25,8 +25,6 @@ class SlackMessage(SlackSpace):
             message_id: str,
             thread_id: str | None = None
         ):
-        super().__init__()
-
         self.workspace_id = workspace_id
         self.channel_id = channel_id
         self.message_id = message_id

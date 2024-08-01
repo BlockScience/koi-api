@@ -193,6 +193,7 @@ class RID(metaclass=PostInitCaller):
     rid_delimiter = ":"
 
     def __post_init__(self):
+        print("called post init")
         pass
     
     def __str__(self):

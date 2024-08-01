@@ -13,8 +13,6 @@ class SlackUser(SlackSpace):
         return f"https://{self.default_domain}.slack.com/team/{self.user_id}"
     
     def __init__(self, workspace_id: str, user_id: str):
-        super().__init__()
-
         self.workspace_id = workspace_id
         self.user_id = user_id
 
