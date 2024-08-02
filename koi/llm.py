@@ -90,7 +90,11 @@ def continue_conversation(conversation_id, query):
 
     footnote_table = ""
     for n, rid in enumerate(unique_vector_rids):
-        line = f"{n+1}: <{rid}>"
+        rid_url = getattr(rid, "url", None)
+        if rid_url:
+            line = f"{n+1}: <{rid_url}|{rid}>"
+        else:
+            line = f"{n+1}: {rid}"
         # cited = f"[{n+1}]" in bot_message
         # if not cited: line += " (unused)"
         footnote_table += line + "\n"
