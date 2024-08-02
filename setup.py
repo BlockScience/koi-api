@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup (
     name="koi",
@@ -6,8 +6,5 @@ setup (
     url="https://github.com/BlockScience/koi-api/",
     author="Luke Miller",
     author_email="luke@block.science",
-    packages=[
-        "koi",
-        "rid_lib"
-    ]
+    packages=find_packages()
 )
