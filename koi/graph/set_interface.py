@@ -1,6 +1,7 @@
 from neo4j import ManagedTransaction
 from rid_lib.core import RID
 
+from koi import utils
 from . import driver
 from .base_interface import GraphBaseInterface
 
@@ -45,7 +46,7 @@ class GraphSetInterface(GraphBaseInterface):
                 for record in member_records
             ]
         
-        return execute_create(members)
+        return execute_create(utils.serialize_rids(members))
 
     def read(self) -> list[RID] | None:
         """Returns RIDs of all member objects."""
@@ -125,4 +126,6 @@ class GraphSetInterface(GraphBaseInterface):
                 # ]
 
             return True
-        return execute_update(add_members, remove_members)
+        return execute_update(
+            utils.serialize_rids(add_members), 
+            utils.serialize_rids(remove_members))
