@@ -27,11 +27,7 @@ def create_link(link_obj: CreateLink):
         )
 
     rid = KoiLink(link_obj.source, link_obj.target, link_obj.tag)
-    success = rid.graph.create(
-        source=link_obj.source,
-        target=link_obj.target,
-        tag=link_obj.tag
-    )
+    success = rid.graph.create()
 
     if not success:
         raise ResourceNotFoundError(rid, detail="Source and/or target not found")

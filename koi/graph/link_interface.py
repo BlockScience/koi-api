@@ -16,7 +16,7 @@ class GraphLinkInterface(GraphBaseInterface):
 
     """
 
-    def create(self, source, target, tag) -> bool:
+    def create(self) -> bool:
         """Creates a new link RID graph object."""
         @driver.execute_write
         def execute_create(tx: ManagedTransaction, source, target, tag):
@@ -43,7 +43,7 @@ class GraphLinkInterface(GraphBaseInterface):
             
             return record is not None
         
-        return execute_create(source, target, tag)
+        return execute_create(self.rid.source, self.rid.target, self.rid.tag)
         
     def read(self) -> tuple[RID, RID] | None:
         """Returns RIDs of linked source and target object."""

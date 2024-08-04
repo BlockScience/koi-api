@@ -36,7 +36,7 @@ def create_object(knowledge_obj: CreateObject):
             cached_object = rid.cache.write(from_dereference=True)
 
     if knowledge_obj.embed:
-        rid.vector.embed(from_cache=True)
+        rid.vector.embed(from_cache=True, flush_queue=True)
     
     return cached_object.to_dict()
 
@@ -135,11 +135,7 @@ def merge_linked_set(linked_set: MergeLinkedSet):
         set_rid = KoiSet(nanoid.generate())
         members = set_rid.graph.create(linked_set.members)
         link_rid = KoiLink(rid, set_rid, linked_set.tag)
-        link_rid.graph.create(
-            source=rid,
-            target=set_rid,
-            tag=linked_set.tag
-        )
+        link_rid.graph.create()
     else:
         target.graph.update(add_members=linked_set.members)
         members = target.graph.read()
