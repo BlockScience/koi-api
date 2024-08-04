@@ -28,6 +28,10 @@ class KoiLink(KoiSpace):
             hash = hashlib.sha256()
             hash.update(json_bytes)
             link_hash = hash.hexdigest()
+            
+            self.source = source
+            self.target = target
+            self.link = link
 
             self.reference = f"{tag}+{link_hash}"
         
