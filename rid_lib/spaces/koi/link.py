@@ -31,7 +31,7 @@ class KoiLink(KoiSpace):
             
             self.source = source
             self.target = target
-            self.link = link
+            self.tag = tag
 
             self.reference = f"{tag}+{link_hash}"
         
