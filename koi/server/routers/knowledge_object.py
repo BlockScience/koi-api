@@ -17,6 +17,7 @@ class CreateObject(BaseModel):
     use_dereference: bool = True
     overwrite: bool = False
     embed: bool = True
+    flush_queue: bool = False
 
 @router.post("/object")
 def create_object(knowledge_obj: CreateObject):
@@ -36,7 +37,7 @@ def create_object(knowledge_obj: CreateObject):
             cached_object = rid.cache.write(from_dereference=True)
 
     if knowledge_obj.embed:
-        rid.vector.embed(from_cache=True, flush_queue=True)
+        rid.vector.embed(from_cache=True, flush_queue=knowledge_obj.flush_queue)
     
     return cached_object.to_dict()
 

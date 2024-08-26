@@ -12,6 +12,7 @@ class PubPubPub(PubPubSpace):
     def __init__(self, subdomain: str, slug: str):
         self.subdomain = subdomain
         self.slug = slug
+        self.url = f"https://{subdomain}.pubpub.org/pub/{slug}"
 
         self.reference = f"{subdomain}/{slug}"
 
@@ -26,8 +27,7 @@ class PubPubPub(PubPubSpace):
                 "'pubpub.pub:<subdomain>/<slug>'")
         
     def dereference(self) -> DataObject:
-        url = f"https://{self.subdomain}.pubpub.org/pub/{self.slug}"
-        resp = requests.get(url)
+        resp = requests.get(self.url)
         pub_text = html2text(resp.text)
 
         return DataObject(
