@@ -15,8 +15,10 @@ class SlackMessage(SlackSpace):
     @property
     def url(self):
         url_message_id = "p" + self.message_id.replace(".", "")
-        return (f"https://{self.default_domain}.slack.com/archives/"
-                f"{self.channel_id}/{url_message_id}")
+        url = f"https://{self.default_domain}.slack.com/archives/{self.channel_id}/{url_message_id}"
+        if self.thread_id:
+            url += f"?thread_ts={self.thread_id}&cid={self.channel_id}"
+        return url
 
     def __init__(
             self,
