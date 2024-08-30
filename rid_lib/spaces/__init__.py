@@ -2,5 +2,6 @@ from . import (
     koi,
     slack,
     substack,
-    web
+    web,
+    discord
 )
