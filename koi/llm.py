@@ -1,6 +1,6 @@
 import json
 
-from openai import OpenAI
+from openai import OpenAI, RateLimitError
 import nanoid
 
 from .config import OPENAI_API_KEY
@@ -69,14 +69,16 @@ def continue_conversation(conversation_id, query):
                 chunks["vectors"].append(vector.to_dict())
             knowledge.append(chunks)
 
-
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=conversation + [{
-            "role": "user",
-            "content": query + "\n\n" + knowledge_text
-        }]
-    )
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=conversation + [{
+                "role": "user",
+                "content": query + "\n\n" + knowledge_text
+            }]
+        )
+    except RateLimitError:
+        return "Exceeded OpenAI maximum token limit, please start a new thread"
 
     # not including knowledge text in conversation history, only active query
     conversation.append({
