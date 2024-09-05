@@ -1,4 +1,7 @@
+import json
+
 from rid_lib.core import RID
+from koi.config import CHUNK_SIZE
 
 
 class VectorObject:
@@ -26,6 +29,18 @@ class VectorObject:
             self.chunk_start = int(self.metadata["chunk_start"])
             self.chunk_end = int(self.metadata["chunk_end"])
 
+    def __repr__(self):
+        return f"<Vector object RID '{self.rid}'{' chunk ' + str(self.chunk_id) if self.is_chunk else ''}>"
+    
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return str(self) == str(other)
+        else:
+            return False
+        
+    def __hash__(self):
+        return hash(str(self))
+    
     def to_dict(self):
         json_data = {
             "id": self.id, 
@@ -56,5 +71,20 @@ class VectorObject:
 
         if self.is_chunk:
             return text[self.chunk_start:self.chunk_end]
+        else:
+            return text
+        
+    def get_extended_text(self):
+        """Extends chunk size to include greater context."""
+        
+        cached_obj = self.rid.cache.read()
+        text = cached_obj.json_data.get("text")
+        if not text: return
+
+        if self.is_chunk:
+            return text[
+                max(0, self.chunk_start - CHUNK_SIZE):
+                min(len(text), self.chunk_end + CHUNK_SIZE)
+            ]
         else:
             return text
