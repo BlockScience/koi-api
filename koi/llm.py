@@ -1,6 +1,6 @@
 import json
 
-from openai import OpenAI, RateLimitError
+from openai import OpenAI, RateLimitError, APIConnectionError
 import nanoid
 
 from .config import OPENAI_API_KEY
@@ -22,7 +22,7 @@ system_prompt = {
 
 query_generation_prompt = {
     "role": "system",
-    "content": "You are a tool part of a Retrieval Augmented Generation system. Based on a user query and conversation history with a chat bot, you will generated three queries that will be sent to a vector store to retrieve contextually relevant knowledge objects. Your response should consist of exactly three questions separated by a single new line. Do not prefix the questions with numbering or any other formatting. Your queries should be designed to recall objects that will be most relevant to the conversation."
+    "content": "You are a tool part of a Retrieval Augmented Generation system. Based on a user query and conversation history with a chat bot, you will generated three queries that will be sent to a vector store to retrieve contextually relevant knowledge objects. Your response should consist of exactly three questions separated by a single new line. Do not prefix the questions with numbering or any other formatting. Your queries should be designed to recall objects that will be most relevant to the conversation. YOU RESPOND WITH EXACTLY THREE (3) QUESTIONS SEPERATE BY A SINGLE NEW LINE."
 }
 
 def start_conversation(conversation_id=None):
@@ -42,10 +42,12 @@ def continue_conversation(conversation_id, query):
         model="gpt-4o",
         messages=[
             query_generation_prompt,
-            *conversation,
             {
                 "role": "user",
-                "content": query
+                "content": "\n".join([
+                    msg["role"] + ": " + msg["content"]
+                    for msg in conversation
+                ])
             }
         ]
     )
@@ -98,23 +100,35 @@ def continue_conversation(conversation_id, query):
                 chunks["vectors"].append(vector.to_dict())
             knowledge.append(chunks)
 
+    
+    messages = conversation + [{
+        "role": "user",
+        "content": query + "\n\n" + knowledge_text
+    }]
+    
+    print("SENDING REQUEST TO OPENAI:")
+    print(f"ORIGINAL QUERY: {query}")
+    print(f"DERIVED QUERIES: {vector_queries}")
+    print(f"KNOWLEDGE: {len(unique_vector_rids)} objects, total {len(knowledge_text)} characters")
+    print(f"TOTAL CONVERSATION: {len(json.dumps(messages))}")
+    
     try:
         response = client.chat.completions.create(
             model="gpt-4o",
-            messages=conversation + [{
-                "role": "user",
-                "content": query + "\n\n" + knowledge_text
-            }]
+            messages=messages
         )
     except RateLimitError:
         return "Exceeded OpenAI maximum token limit, please start a new thread"
+    
+    except APIConnectionError:
+        return "Error connecting to OpenAI API"
 
     # not including knowledge text in conversation history, only active query
     conversation.append({
         "role": "user",
         "content": query,
-        "knowledge_text": knowledge_text,
-        "knowledge": knowledge
+        # "knowledge_text": knowledge_text,
+        # "knowledge": knowledge
     })
 
     bot_message = response.choices[0].message.content
@@ -133,7 +147,7 @@ def continue_conversation(conversation_id, query):
     conversation.append({
         "role": "assistant",
         "content": bot_message,
-        "footnotes": footnotes
+        # "footnotes": footnotes
     })
 
     with open("conversations.json", "w") as f:

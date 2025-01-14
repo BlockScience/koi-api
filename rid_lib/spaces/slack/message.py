@@ -73,8 +73,8 @@ class SlackMessage(SlackSpace):
         
         return cls(workspace_id, channel_id, message_id, thread_id)
 
-    def dereference(self):
-        if self.is_in_thread:
+    def dereference(self, thread=True):
+        if thread:
             response = self.app.client.conversations_replies(
                 channel=self.channel_id,
                 ts=self.message_id

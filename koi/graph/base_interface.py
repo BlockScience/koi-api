@@ -95,3 +95,17 @@ class GraphBaseInterface:
             record = tx.run(DROP_DATABASE)
         
         return execute_drop()
+    
+    @staticmethod
+    def read_all():
+        """Returns RIDs of all objects in the graph."""
+        @driver.execute_read
+        def execute_read_all(tx: ManagedTransaction):
+            READ_ALL = """//cypher
+                MATCH (n) RETURN collect(n.rid) AS objects
+                """
+                
+            record = tx.run(READ_ALL).single()
+            if record:
+                return [RID.from_string(obj) for obj in record["objects"]]
+        return execute_read_all()
