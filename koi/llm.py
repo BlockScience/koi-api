@@ -3,8 +3,9 @@ import json
 from openai import OpenAI, RateLimitError, APIConnectionError
 import nanoid
 
+from .llm_subsystem import rag, prompts
+
 from .config import OPENAI_API_KEY
-from .vectorstore import VectorInterface
 
 
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -15,102 +16,77 @@ try:
 except FileNotFoundError:
     conversations = {}
 
-system_prompt = {
-    "role": "system", 
-    "content": "You are a helpful assistant that is a part of KOI Pond, a Knowledge Organization Infrastructure system, that responds to user queries with the help of KOI's knowledge. A user will ask you questions prefixed by 'User:'. Several knowledge objects will be returned from KOI identified by an id in the following format 'Knowledge Object [{n}] {id}'. Ids will take the following format '{space}.{type}:{reference}'. The number of the reference will be included in square brackets. Use this information in addition to the context of the ongoing conversation to respond to the user. If the information provided is insufficient to answer a question, simply convey that to the user, do not make up an answer that doesn't have any basis. YOU MUST CITE ALL PROVIDED SOURCES DIRECTLY AFTER INFORMATION GENERATED BASED ON THAT SOURCE WITH A NUMBERED REFERENCE IN THE FOLLOWING FORMAT: '[{n}]' where n is a number, for example '[3]'. THE SOURCES ARE ALREADY PROVIDED TO THE USER, DO NOT INCLUDE FOOTNOTES OR REFERENCES AT THE END OF YOUR MESSAGE."
-}
 
-query_generation_prompt = {
-    "role": "system",
-    "content": "You are a tool part of a Retrieval Augmented Generation system. Based on a user query and conversation history with a chat bot, you will generated three queries that will be sent to a vector store to retrieve contextually relevant knowledge objects. Your response should consist of exactly three questions separated by a single new line. Do not prefix the questions with numbering or any other formatting. Your queries should be designed to recall objects that will be most relevant to the conversation. YOU RESPOND WITH EXACTLY THREE (3) QUESTIONS SEPERATE BY A SINGLE NEW LINE."
-}
+
 
 def start_conversation(conversation_id=None):
     """Creates a new conversation with provided id, or generates one randomly."""
     conversation_id = conversation_id or nanoid.generate()
-    conversations[conversation_id] = [system_prompt]
+    conversations[conversation_id] = [prompts.SYSTEM_PROMPT]
     return conversation_id
 
-def continue_conversation(conversation_id, query):
+def continue_conversation(conversation_id, prompt: str):
     """Continues conversation, returns response."""
     conversation = conversations.get(conversation_id)
     if conversation is None:
         start_conversation(conversation_id)
     conversation = conversations.get(conversation_id)
+
+    # remove bot mention
+    prompt = prompt.split(maxsplit=1)[1]
     
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            query_generation_prompt,
-            {
-                "role": "user",
-                "content": "\n".join([
-                    msg["role"] + ": " + msg["content"]
-                    for msg in conversation
-                ])
-            }
-        ]
-    )
-    
-    vector_queries = [
-        line for line in
-        response.choices[0].message.content.splitlines()
-        if line != ""
-    ]
-
-    print(vector_queries)
-
-    vectors = set()
-    for vector_query in vector_queries:
-        vectors.update(VectorInterface.query(vector_query, top_k=7))
-                
-    # removes duplicates in the case of multiple chunks from the same document
-    unique_vector_rids = []
-    for v in vectors:
-        if v.rid not in unique_vector_rids:
-            unique_vector_rids.append(v.rid)
-
-    knowledge_text = ""
-    knowledge = []
-    for i, rid in enumerate(unique_vector_rids):
-        # filters all vectors with same rid
-        related_vectors = [v for v in vectors if v.rid == rid]
-        knowledge_text += f"Knowledge Object [{i+1}] {rid}\n"
-        
-        # if single vector isn't a chunk just append text
-        if len(related_vectors) == 1 and not related_vectors[0].is_chunk:
-            knowledge_text += f"{related_vectors[0].get_extended_text()}\n\n"
-            knowledge.append({
-                "knowledge_object_id": i+1,
-                "num_vectors": 1,
-                "vectors": [related_vectors[0].to_dict()]
-            })
-        # otherwise append each chunk with a chunk id prefix
-        else:
-            related_vectors.sort(key=lambda v: v.chunk_id)
+    if (prompt.startswith(("+", "-"))):
+        print('detected filter')
+        params, query = prompt.split(maxsplit=1)
+                        
+        if params.startswith("+"):
+            op = "in"
+        elif params.startswith("-"):
+            op = "nin"
             
-            chunks = {
-                "knowledge_object_id": i+1,
-                "num_vectors": len(related_vectors),
-                "vectors": []
-            }
-            for vector in related_vectors:
-                # knowledge_text += f"Chunk {vector.chunk_id}:\n{vector.get_text()}\n\n"
-                knowledge_text += f"{vector.get_extended_text()}\n\n"
-                chunks["vectors"].append(vector.to_dict())
-            knowledge.append(chunks)
+        spaces = params[1:].split(";")
+        
+        print(params, spaces)
+        
+        filter = {
+            "character_length": {"$gt": 200},
+            "space": {"$" + op: spaces},
+        }
+    else:
+        query = prompt
+        filter = {
+            "character_length": {"$gt": 200}
+        }
+        
+    print(filter)
 
+    
+    queries = rag.generate_queries([
+        *conversation,
+        {
+            "role": "user",
+            "content": query
+        }
+    ])
+
+    print(f"DERIVED QUERIES: {queries}")
+    vectors = rag.vector_multiquery(queries, top_k=5, filter=filter)
+    unique_vector_rids = rag.unique_vector_rids(vectors)
+    knowledge_text = rag.generate_knowledge(unique_vector_rids, vectors)
+            
     
     messages = conversation + [{
         "role": "user",
         "content": query + "\n\n" + knowledge_text
     }]
-    
+        
     print("SENDING REQUEST TO OPENAI:")
     print(f"ORIGINAL QUERY: {query}")
-    print(f"DERIVED QUERIES: {vector_queries}")
-    print(f"KNOWLEDGE: {len(unique_vector_rids)} objects, total {len(knowledge_text)} characters")
+    print(f"KNOWLEDGE: total {len(knowledge_text)} characters")
     print(f"TOTAL CONVERSATION: {len(json.dumps(messages))}")
+    
+    with open("prompt_to_chatbot.json", "w") as f:
+        json.dump(messages, f, indent=2)
     
     try:
         response = client.chat.completions.create(
@@ -126,22 +102,24 @@ def continue_conversation(conversation_id, query):
     # not including knowledge text in conversation history, only active query
     conversation.append({
         "role": "user",
-        "content": query,
-        # "knowledge_text": knowledge_text,
-        # "knowledge": knowledge
+        "content": query
     })
 
     bot_message = response.choices[0].message.content
 
-    footnotes = "Generated from sources "
+    footer = "---\nGenerated from sources: "
     for n, rid in enumerate(unique_vector_rids):
         if getattr(rid, "url", None):
-            footnotes += f"<{rid.url}|{n+1}>"
+            footer += f"<{rid.url}|{n+1}>"
         else:
-            footnotes += f"<rid:{rid}|{n+1}>"
+            footer += f"<rid:{rid}|{n+1}>"
         
         if n < len(unique_vector_rids) - 1:
-            footnotes += ", "
+            footer += ", "
+            
+    footer += f"\nwith filter `{filter}`"
+    
+    # footer += "\nusing{:.1f}k prompt tokens".format(response.usage.prompt_tokens / 1000.0)
             
                 
     conversation.append({
@@ -153,4 +131,4 @@ def continue_conversation(conversation_id, query):
     with open("conversations.json", "w") as f:
         json.dump(conversations, f, indent=2)
 
-    return bot_message + "\n\n" + footnotes
+    return bot_message + "\n\n" + footer

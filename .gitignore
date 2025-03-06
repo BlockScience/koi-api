@@ -4,3 +4,4 @@ venv
 .env
 /cache
 conversations.json
+kms-tools

@@ -267,7 +267,7 @@ class VectorInterface:
                 "$gt": 200
             }
         }
-    ) -> list[VectorObject]:
+    ) -> list[VectorObject]:        
         """Returns a list of VectorObjects resulting from provided query."""
         result = pinecone_index.query(
             vector=voyage_embed_texts([text], input_type="query"),
